@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/snapshot.json",
+  "title": "arc/snapshot body (registry-signed discovery response)",
+  "type": "object",
+  "required": [
+    "query_ref",
+    "as_of",
+    "results"
+  ],
+  "properties": {
+    "query_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "as_of": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "aid",
+          "card_ref",
+          "capability",
+          "scores",
+          "samples"
+        ],
+        "properties": {
+          "aid": {
+            "$ref": "common.json#/$defs/aid"
+          },
+          "card_ref": {
+            "$ref": "common.json#/$defs/hash"
+          },
+          "capability": {
+            "type": "string"
+          },
+          "scores": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "samples": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confidence": {
+            "$ref": "common.json#/$defs/score"
+          },
+          "probe_verified": {
+            "type": "boolean"
+          },
+          "probe_at": {
+            "$ref": "common.json#/$defs/timestamp"
+          },
+          "roai_band": {
+            "type": "object",
+            "properties": {
+              "low": {
+                "type": "number"
+              },
+              "median": {
+                "type": "number"
+              },
+              "high": {
+                "type": "number"
+              },
+              "buyers": {
+                "type": "integer",
+                "minimum": 5
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

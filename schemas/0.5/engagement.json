@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/engagement.json",
+  "title": "arc/engagement body (spot | term | standing contract terms)",
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "$ref": "common.json#/$defs/engagement_type"
+    },
+    "epoch": {
+      "$ref": "common.json#/$defs/duration"
+    },
+    "bound": {
+      "type": "object",
+      "properties": {
+        "max_tasks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "duration": {
+          "$ref": "common.json#/$defs/duration"
+        }
+      }
+    },
+    "committed_volume": {
+      "type": "object",
+      "properties": {
+        "min_tasks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unit_price": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)?$"
+        }
+      }
+    },
+    "rolling_slo": {
+      "type": "object",
+      "properties": {
+        "window_tasks": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    },
+    "renewal_gate": {
+      "type": "object",
+      "required": [
+        "policy_ref"
+      ],
+      "properties": {
+        "policy_ref": {
+          "$ref": "common.json#/$defs/hash"
+        },
+        "trend": {
+          "type": "object",
+          "properties": {
+            "dimension": {
+              "type": "string"
+            },
+            "max_decline_epochs": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "termination": {
+      "type": "object",
+      "properties": {
+        "notice": {
+          "$ref": "common.json#/$defs/duration"
+        },
+        "breach_exit": {
+          "type": "string"
+        }
+      }
+    },
+    "value_share_terms": {
+      "type": "object",
+      "required": [
+        "audit",
+        "floor"
+      ],
+      "properties": {
+        "audit": {
+          "type": "object",
+          "required": [
+            "cadence",
+            "sample_pct"
+          ],
+          "properties": {
+            "cadence": {
+              "$ref": "common.json#/$defs/duration"
+            },
+            "sample_pct": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            }
+          }
+        },
+        "floor": {
+          "const": "receipts_x_unit_value"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "standing"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "epoch",
+          "renewal_gate",
+          "termination"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "term"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "bound"
+        ]
+      }
+    }
+  ]
+}

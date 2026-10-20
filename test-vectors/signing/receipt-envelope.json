@@ -1,0 +1,40 @@
+{
+  "arc": "0.5",
+  "type": "arc/receipt",
+  "id": "urn:uuid:00000006-0000-4000-8000-000000000006",
+  "issuer": "did:key:z6Mkt2rm7dm62Pxe5C4DJgZUpwGLsbdEyfi2txLJgcKP4ZjX",
+  "issued": "2026-08-25T10:30:03Z",
+  "body": {
+    "task_hash": "sha256:98b64743fb92cf6f73d39d81935403e6addc685e24777be375e482e219ecc0df",
+    "capability": "invoice-data-extraction",
+    "taxonomy_node": "arc.document.extraction.invoice",
+    "buyer_aid": "arc:mkt.example:BQ7TQ9P2XXTR84MN",
+    "seller_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+    "engagement_ref": "sha256:13151606c657c1e3a3aa487a5adedefeb1d416d6434aca07dbae7e34bd4f1a85",
+    "snapshot_ref": "sha256:1661f52a0e5681208646f1ca43a974994c81a56371f8fb31085199efd67fb575",
+    "timestamps": {
+      "delegated": "2026-08-25T10:30:02Z",
+      "delivered": "2026-08-25T10:30:03.4Z"
+    },
+    "units": {
+      "unit": "page",
+      "count": 12
+    },
+    "payment": {
+      "amount": {
+        "amount": "0.072",
+        "currency": "USD"
+      },
+      "escrow_ref": "esc-1",
+      "payout_tier": "slo_met"
+    },
+    "allocation": {
+      "cost_center": "FIN-OPS-114",
+      "project": "ap-automation",
+      "workflow_id": "wf-88"
+    },
+    "seller_sig": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..EXAMPLE-SIGNATURE-NOT-VERIFIABLE",
+    "buyer_countersig": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..EXAMPLE-SIGNATURE-NOT-VERIFIABLE"
+  },
+  "sig": "eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa3Qycm03ZG02MlB4ZTVDNERKZ1pVcHdHTHNiZEV5ZmkydHhMSmdjS1A0WmpYI3o2TWt0MnJtN2RtNjJQeGU1QzRESmdaVXB3R0xzYmRFeWZpMnR4TEpnY0tQNFpqWCJ9..zQn86Wa552BZMRM21g9ZoewPopSJbwuWXJYKQ-qSQFfESAseNHa3TcafSyY_qOUKoR9fYu0FCNprVsE2IpKHDQ"
+}

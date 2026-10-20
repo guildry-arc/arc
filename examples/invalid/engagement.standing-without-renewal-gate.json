@@ -1,0 +1,12 @@
+{
+  "type": "standing",
+  "epoch": "P30D",
+  "committed_volume": {
+    "min_tasks": 900,
+    "unit_price": "0.005"
+  },
+  "termination": {
+    "notice": "P14D",
+    "breach_exit": "rolling_slo_breach"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "offer_hash": "sha256:44461591055c013c16ffff0d01a844ad2076b37e8317ebae16a704928588e524",
+  "seller_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "price": {
+    "amount": "0.03",
+    "currency": "USD"
+  }
+}

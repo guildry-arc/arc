@@ -1,0 +1,21 @@
+{
+  "rfq_ref": "urn:uuid:00000002-0000-4000-8000-000000000002",
+  "seller_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "card_ref": "sha256:6887924e3afd0ff4b253febd733abb8a4d3ef272a5f8ce41f359fb35ab837d94",
+  "price": {
+    "model": "per_task",
+    "price": {
+      "amount": "0.035",
+      "currency": "USD"
+    }
+  },
+  "slo": {
+    "max_latency_ms": 2500
+  },
+  "valid_until": "2026-08-25T11:00:00Z",
+  "negotiable_dimensions": [
+    "price",
+    "max_latency_ms",
+    "volume_tiers"
+  ]
+}

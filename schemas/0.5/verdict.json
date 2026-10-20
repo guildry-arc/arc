@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/verdict.json",
+  "title": "arc/verdict body (verifier decision; escrow and scores follow it)",
+  "type": "object",
+  "required": [
+    "dispute_ref",
+    "verifier_aid",
+    "outcome"
+  ],
+  "properties": {
+    "dispute_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "verifier_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "outcome": {
+      "enum": [
+        "buyer_upheld",
+        "seller_upheld",
+        "adjusted"
+      ]
+    },
+    "adjustments": {
+      "type": "object",
+      "properties": {
+        "payout_tier": {
+          "type": "string"
+        },
+        "void_attestation": {
+          "type": "boolean"
+        },
+        "back_payment": {
+          "$ref": "common.json#/$defs/money"
+        }
+      }
+    },
+    "evidence_hash": {
+      "$ref": "common.json#/$defs/hash"
+    }
+  }
+}

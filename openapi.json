@@ -1,0 +1,1335 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "ARC Registry API",
+    "version": "arc/0.5",
+    "summary": "The registry surface of ARC, the Agent Reputation & Commerce protocol.",
+    "description": "Generated from the ARC Protocol Specification arc/0.5 (§14). Request and response bodies reference the schemas in `schemas/0.5/`, the single source of truth for object shapes. All mutating calls carry signed ARC envelopes; responses carrying scores or listings are registry-signed. Idempotency is by envelope id. This is a draft: error-body shape and some query parameters are not yet normative.",
+    "contact": {
+      "name": "Guildry",
+      "email": "hello@guildry.tech",
+      "url": "https://guildry.tech"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://{registry}",
+      "description": "Any ARC registry. Registries advertise their versions and conformance levels at /.well-known/arc.",
+      "variables": {
+        "registry": {
+          "default": "registry.example",
+          "description": "Registry host"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "Identity"
+    },
+    {
+      "name": "Listings"
+    },
+    {
+      "name": "Discovery"
+    },
+    {
+      "name": "Negotiation"
+    },
+    {
+      "name": "Commerce"
+    },
+    {
+      "name": "Reputation"
+    },
+    {
+      "name": "Value"
+    },
+    {
+      "name": "Finance"
+    },
+    {
+      "name": "Disputes"
+    },
+    {
+      "name": "Portability"
+    }
+  ],
+  "paths": {
+    "/.well-known/arc": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Registry configuration: supported ARC versions and conformance levels",
+        "description": "Served at the registry root, outside /v1. See spec §16, §18.",
+        "operationId": "get_well_known_arc",
+        "responses": {
+          "200": {
+            "description": "Registry configuration document.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/challenge": {
+      "post": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Obtain a single-use registration or key-proof nonce (TTL 120 s)",
+        "description": "See spec §5.1.",
+        "operationId": "post_v1_agents_challenge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "did"
+                ],
+                "properties": {
+                  "did": {
+                    "$ref": "./schemas/0.5/common.json#/$defs/did"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A single-use nonce.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "nonce"
+                  ],
+                  "properties": {
+                    "nonce": {
+                      "type": "string",
+                      "minLength": 16
+                    },
+                    "expires": {
+                      "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/register": {
+      "post": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Register or update roles (arc/registration)",
+        "description": "On success the registry issues the ARC-AID. See spec §5.",
+        "operationId": "post_v1_agents_register",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `registration`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/registration.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/agents/{id}": {
+      "get": {
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Fetch an agent's public record, roles and status",
+        "description": "See spec §4.1, §14.",
+        "operationId": "get_v1_agents_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "An ARC-AID or a DID. Both MUST resolve to the same record.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cards": {
+      "post": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Submit or version an extended Agent Card (arc/card)",
+        "description": "See spec §6.",
+        "operationId": "post_v1_cards",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `card`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/card.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cards/{hash}": {
+      "get": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Fetch a card by hash",
+        "description": "See spec §6.1.",
+        "operationId": "get_v1_cards_hash",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Browse the capability taxonomy with listing and receipt counts",
+        "description": "See spec §7.1.",
+        "operationId": "get_v1_capabilities",
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/capabilities/{node}": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Cards listed under a taxonomy node",
+        "description": "See spec §7.1.",
+        "operationId": "get_v1_capabilities_node",
+        "parameters": [
+          {
+            "name": "node",
+            "in": "path",
+            "required": true,
+            "description": "e.g. arc.document.extraction.invoice",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/discovery/query": {
+      "post": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Trust-policy and/or intent query; returns a signed arc/snapshot",
+        "description": "See spec §7.2, §7.4.",
+        "operationId": "post_v1_discovery_query",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `policy`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/policy.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A registry-signed envelope whose body is an arc/snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "./schemas/0.5/envelope.json"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "body": {
+                          "$ref": "./schemas/0.5/snapshot.json"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rfqs": {
+      "post": {
+        "tags": [
+          "Negotiation"
+        ],
+        "summary": "Open an RFQ; the registry fans out to eligible sellers only (max 8)",
+        "description": "See spec §8.1.",
+        "operationId": "post_v1_rfqs",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `rfq`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/rfq.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rfqs/{id}/quotes": {
+      "get": {
+        "tags": [
+          "Negotiation"
+        ],
+        "summary": "Collected quotes for an RFQ (requester only)",
+        "description": "See spec §8.1.",
+        "operationId": "get_v1_rfqs_id_quotes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed arc/quote envelopes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "./schemas/0.5/envelope.json"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "body": {
+                            "$ref": "./schemas/0.5/quote.json"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/scores/{aid}": {
+      "get": {
+        "tags": [
+          "Reputation"
+        ],
+        "summary": "Per-capability seller scores and buyer conduct scores, served separately (signed)",
+        "description": "See spec §11.",
+        "operationId": "get_v1_scores_aid",
+        "parameters": [
+          {
+            "name": "aid",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/aid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engagements": {
+      "post": {
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "File a countersigned engagement",
+        "description": "See spec §8.3.",
+        "operationId": "post_v1_engagements",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `engagement`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/engagement.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipts": {
+      "post": {
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "File a receipt or countersignature",
+        "description": "The buyer countersignature completes the receipt and triggers payout. See spec §9.",
+        "operationId": "post_v1_receipts",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `receipt`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/receipt.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receipts/{hash}": {
+      "get": {
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "Fetch a receipt by hash (parties and auditors)",
+        "description": "See spec §9.",
+        "operationId": "get_v1_receipts_hash",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The receipt envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "./schemas/0.5/envelope.json"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "body": {
+                          "$ref": "./schemas/0.5/receipt.json"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/attestations": {
+      "post": {
+        "tags": [
+          "Reputation"
+        ],
+        "summary": "Submit an attestation in either direction",
+        "description": "See spec §11.1, §11.2, §11.5.",
+        "operationId": "post_v1_attestations",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `attestation`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/attestation.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/value-models": {
+      "post": {
+        "tags": [
+          "Value"
+        ],
+        "summary": "Register a signed value model",
+        "description": "See spec §11.4.",
+        "operationId": "post_v1_value_models",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `value_model`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/value_model.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/value-models/{hash}": {
+      "get": {
+        "tags": [
+          "Value"
+        ],
+        "summary": "Resolve a value model by hash",
+        "description": "See spec §11.4.",
+        "operationId": "get_v1_value_models_hash",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The value model envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "./schemas/0.5/envelope.json"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "body": {
+                          "$ref": "./schemas/0.5/value_model.json"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/outcomes": {
+      "post": {
+        "tags": [
+          "Value"
+        ],
+        "summary": "Submit an outcome attestation for value attribution",
+        "description": "See spec §11.4.",
+        "operationId": "post_v1_outcomes",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `outcome`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/outcome.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/roai/{aid}": {
+      "get": {
+        "tags": [
+          "Value"
+        ],
+        "summary": "ROAI aggregates and bands for an agent (disclosure-respecting, signed)",
+        "description": "See spec §11.4.",
+        "operationId": "get_v1_roai_aid",
+        "parameters": [
+          {
+            "name": "aid",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/aid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ledger": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "summary": "Incremental, buyer-scoped ledger records for ERP reconciliation",
+        "description": "Allocation-field filters are part of the spec; their query syntax is not yet fixed in arc/0.5. See spec §10.3.",
+        "operationId": "get_v1_ledger",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Filter by ledger state.",
+            "schema": {
+              "enum": [
+                "committed",
+                "settled",
+                "held",
+                "refunded",
+                "auto_settled"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start of period (event time, inclusive).",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End of period (event time, exclusive).",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor from the previous page, for incremental reads.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ledger records ordered by event time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "./schemas/0.5/ledger_record.json"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/disputes": {
+      "post": {
+        "tags": [
+          "Disputes"
+        ],
+        "summary": "Open a dispute",
+        "description": "See spec §12.",
+        "operationId": "post_v1_disputes",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `dispute`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.5/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.5/dispute.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/disputes/{id}": {
+      "get": {
+        "tags": [
+          "Disputes"
+        ],
+        "summary": "Dispute status, and the verdict once issued",
+        "description": "See spec §12.",
+        "operationId": "get_v1_disputes_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.5/common.json#/$defs/uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/anchors/latest": {
+      "get": {
+        "tags": [
+          "Portability"
+        ],
+        "summary": "Latest Merkle root and inclusion proofs (ARC-Port)",
+        "description": "See spec §16.",
+        "operationId": "get_v1_anchors_latest",
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SignedEnvelope": {
+        "$ref": "./schemas/0.5/envelope.json"
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "description": "Not yet normative in arc/0.5: the spec defines the codes but not the error body.",
+        "properties": {
+          "code": {
+            "enum": [
+              "ARC-1001",
+              "ARC-1002",
+              "ARC-1003",
+              "ARC-2001",
+              "ARC-2002",
+              "ARC-2003",
+              "ARC-2004",
+              "ARC-2005",
+              "ARC-3001",
+              "ARC-3002",
+              "ARC-4001",
+              "ARC-4002",
+              "ARC-4003",
+              "ARC-4004",
+              "ARC-5001",
+              "ARC-5002",
+              "ARC-6001",
+              "ARC-6002",
+              "ARC-7001",
+              "ARC-7002",
+              "ARC-7003"
+            ],
+            "description": "- `ARC-1001` Signature invalid or key not resolvable from DID.\n- `ARC-1002` Unknown or inactive DID / role not held.\n- `ARC-1003` Nonce missing, expired, or reused.\n- `ARC-2001` Trust policy matched no candidates (includes nearest-miss hints).\n- `ARC-2002` Snapshot expired; re-query before offering.\n- `ARC-2003` Buyer does not satisfy the seller's buyer_requirements.\n- `ARC-2004` io_schema incompatible with the buyer's example input or expected output.\n- `ARC-2005` Capability not probe-verified and require_probe_verified is set.\n- `ARC-3001` Escrow lock exceeds registered spend policy.\n- `ARC-3002` Payment mandate invalid or rail unavailable.\n- `ARC-4001` Receipt fields inconsistent with offer or engagement.\n- `ARC-4002` Attestation window expired.\n- `ARC-4003` Duplicate attestation for receipt and dimension.\n- `ARC-4004` Rater identity does not match receipt buyer.\n- `ARC-5001` Dispute ineligible or window expired.\n- `ARC-5002` No conformant verifier available; dispute queued.\n- `ARC-6001` Negotiation message cap reached; chain abandoned.\n- `ARC-6002` Quote expired or non-monotonic counter rejected.\n- `ARC-7001` Value model unknown, unsigned, or inconsistent units.\n- `ARC-7002` Outcome evidence missing or insufficient for the claimed value.\n- `ARC-7003` Reported value below the computed value floor of a value_share engagement."
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

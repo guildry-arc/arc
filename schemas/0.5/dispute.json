@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/dispute.json",
+  "title": "arc/dispute body",
+  "type": "object",
+  "required": [
+    "kind",
+    "receipt_hash",
+    "opened_by"
+  ],
+  "properties": {
+    "kind": {
+      "enum": [
+        "withheld_countersign",
+        "contested_attestation",
+        "accuracy_miss_claim",
+        "value_audit"
+      ]
+    },
+    "receipt_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "attestation_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "opened_by": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "claim": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

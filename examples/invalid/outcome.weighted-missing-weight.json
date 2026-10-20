@@ -1,0 +1,23 @@
+{
+  "value_model_ref": "sha256:9c7e380f722a7be6dbc4f1aa5dcf7924f7f93b5bb60803889dda2bda48b9ed6b",
+  "receipts": [
+    {
+      "hash": "sha256:42f7fee05bd7c45fc7480aafcdd4b6fac6df88f5bff57d07cb015455d0c912cf",
+      "weight": 0.7
+    },
+    {
+      "hash": "sha256:26684ae81e3c741714413a6838d9a76606d582f58979bcfcc6a19333bf6bc198"
+    }
+  ],
+  "attribution": "weighted",
+  "value": {
+    "amount": "612.00",
+    "currency": "USD"
+  },
+  "evidence": {
+    "kind": "downstream_receipt",
+    "ref": "sha256:de1c8cbee1050812a54d80da15592f3fae0fe7833b1bc872af5bb050907a0a67"
+  },
+  "disclosure": "aggregate",
+  "buyer_aid": "arc:mkt.example:BQ7TQ9P2XXTR84MN"
+}

@@ -1,0 +1,56 @@
+{
+  "a2a_card": {
+    "name": "parse.invoices",
+    "url": "https://seller.example/a2a"
+  },
+  "capabilities": [
+    {
+      "id": "invoice-data-extraction",
+      "taxonomy_node": "arc.document.extraction.invoice",
+      "tags": [
+        "pdf",
+        "finance",
+        "line-items"
+      ],
+      "description": "Extracts line items from invoice PDFs to JSON",
+      "io_schema": {
+        "input": "sha256:ec00c328ae5c848efe438ddc238a1880525451d08a7ee89da69b3a50d168552c",
+        "output": "sha256:e4877fd1dfeb882c61cf1ccebd0845e52621289902ef772b939fb927665a262a"
+      },
+      "pricing": {
+        "model": "value_share",
+        "price": {
+          "amount": "0.00",
+          "currency": "USD"
+        }
+      },
+      "rubric_templates": [
+        "sha256:00529ffbe557b0e49937f3409e4d1282c46ee126fef359318d24f94bc4fb92e5"
+      ],
+      "model_version": "2026-08-01"
+    }
+  ],
+  "payment_terms": {
+    "rails": [
+      "ap2",
+      "x402"
+    ],
+    "escrow": "required",
+    "settlement": "on_countersign",
+    "silence_timeout": "PT72H",
+    "refunds": "tiered_slo",
+    "invoice_granularity": "per_task"
+  },
+  "buyer_requirements": {
+    "min_buyer_score": 0.7,
+    "max_dispute_loss_rate": 0.05,
+    "min_completed_tasks": 20,
+    "max_countersign_p95": "PT12H",
+    "risk_premium": [
+      {
+        "buyer_score_below": 0.8,
+        "price_multiplier": 1.15
+      }
+    ]
+  }
+}

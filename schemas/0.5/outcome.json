@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/outcome.json",
+  "title": "arc/outcome body (value attestation over the receipt DAG)",
+  "type": "object",
+  "required": [
+    "value_model_ref",
+    "receipts",
+    "attribution",
+    "value",
+    "disclosure",
+    "buyer_aid"
+  ],
+  "properties": {
+    "value_model_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "receipts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "hash"
+        ],
+        "properties": {
+          "hash": {
+            "$ref": "common.json#/$defs/hash"
+          },
+          "weight": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "attribution": {
+      "enum": [
+        "last_touch",
+        "linear",
+        "weighted"
+      ]
+    },
+    "value": {
+      "$ref": "common.json#/$defs/money"
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "downstream_receipt",
+            "test_result",
+            "verifier_verdict",
+            "external"
+          ]
+        },
+        "ref": {
+          "type": "string"
+        }
+      }
+    },
+    "disclosure": {
+      "$ref": "common.json#/$defs/disclosure"
+    },
+    "buyer_aid": {
+      "$ref": "common.json#/$defs/aid"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "attribution": {
+            "const": "weighted"
+          }
+        },
+        "required": [
+          "attribution"
+        ]
+      },
+      "then": {
+        "properties": {
+          "receipts": {
+            "items": {
+              "required": [
+                "hash",
+                "weight"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

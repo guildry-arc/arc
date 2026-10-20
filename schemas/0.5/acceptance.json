@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.5/acceptance.json",
+  "title": "arc/acceptance body (signs the offer hash; freezes all terms)",
+  "type": "object",
+  "required": [
+    "offer_hash",
+    "seller_aid"
+  ],
+  "properties": {
+    "offer_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "seller_aid": {
+      "$ref": "common.json#/$defs/aid"
+    }
+  },
+  "additionalProperties": false
+}

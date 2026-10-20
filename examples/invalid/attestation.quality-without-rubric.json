@@ -1,0 +1,13 @@
+{
+  "direction": "buyer_on_seller",
+  "kind": "quality",
+  "receipt_hash": "sha256:42f7fee05bd7c45fc7480aafcdd4b6fac6df88f5bff57d07cb015455d0c912cf",
+  "scores": {
+    "schema_valid": 1.0,
+    "totals_correct": 1.0,
+    "dates_iso": 0.9
+  },
+  "composite": 0.97,
+  "subject_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "rater_aid": "arc:mkt.example:BQ7TQ9P2XXTR84MN"
+}

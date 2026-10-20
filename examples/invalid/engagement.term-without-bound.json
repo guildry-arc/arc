@@ -1,0 +1,13 @@
+{
+  "type": "term",
+  "rolling_slo": {
+    "window_tasks": 100
+  },
+  "value_share_terms": {
+    "audit": {
+      "cadence": "P30D",
+      "sample_pct": 5
+    },
+    "floor": "receipts_x_unit_value"
+  }
+}

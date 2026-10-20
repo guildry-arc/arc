@@ -1,0 +1,8 @@
+{
+  "warning": "PUBLIC TEST KEY. Anyone can sign with it. Never use it outside tests.",
+  "seed_derivation": "sha256(\"ARC arc/0.5 public test key - never use for real funds\")",
+  "private_key_hex": "36cb081611b975e0d1948f04481ab8cd7db59d0b8acd870b121ba0c40fd36ab8",
+  "public_key_hex": "c9c359a4aeea54e093e22c2b6aef4e848a67a5d9cf2b70400a0cd39e7bd7987a",
+  "did": "did:key:z6Mkt2rm7dm62Pxe5C4DJgZUpwGLsbdEyfi2txLJgcKP4ZjX",
+  "kid": "did:key:z6Mkt2rm7dm62Pxe5C4DJgZUpwGLsbdEyfi2txLJgcKP4ZjX#z6Mkt2rm7dm62Pxe5C4DJgZUpwGLsbdEyfi2txLJgcKP4ZjX"
+}

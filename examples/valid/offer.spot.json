@@ -1,0 +1,60 @@
+{
+  "task_hash": "sha256:98b64743fb92cf6f73d39d81935403e6addc685e24777be375e482e219ecc0df",
+  "card_ref": "sha256:6887924e3afd0ff4b253febd733abb8a4d3ef272a5f8ce41f359fb35ab837d94",
+  "snapshot_ref": "sha256:1661f52a0e5681208646f1ca43a974994c81a56371f8fb31085199efd67fb575",
+  "buyer_snapshot_ref": "sha256:9bc75899907e49e1da8ad82b97495d4257fc2874a87d5e7025dd8cc291909dcf",
+  "engagement": {
+    "type": "spot"
+  },
+  "slo": {
+    "max_latency_ms": 5000,
+    "verification": "computed"
+  },
+  "rubric": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "check": "output validates against io_schema.output",
+        "weight": 0.3
+      },
+      {
+        "id": "totals_correct",
+        "check": "line items sum to invoice total",
+        "weight": 0.4
+      },
+      {
+        "id": "dates_iso",
+        "check": "all dates are ISO 8601",
+        "weight": 0.3
+      }
+    ]
+  },
+  "payout": [
+    {
+      "if": "slo_met",
+      "pay": "100%"
+    },
+    {
+      "if": "latency_miss",
+      "pay": "80%"
+    },
+    {
+      "if": "accuracy_miss",
+      "pay": "50%",
+      "dispute_eligible": true
+    }
+  ],
+  "price": {
+    "model": "per_unit",
+    "unit": "page",
+    "price": {
+      "amount": "0.006",
+      "currency": "USD"
+    }
+  },
+  "allocation": {
+    "cost_center": "FIN-OPS-114",
+    "project": "ap-automation",
+    "workflow_id": "wf-88"
+  }
+}
