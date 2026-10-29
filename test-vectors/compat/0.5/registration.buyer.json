@@ -1,0 +1,31 @@
+{
+  "nonce": "n-6f1c2a9e4b7d8c03",
+  "roles": [
+    "buyer"
+  ],
+  "buyer": {
+    "payment_mandate": {
+      "rail": "ap2",
+      "mandate_ref": "mandate-0001",
+      "currency": "USD"
+    },
+    "spend_policy": {
+      "max_per_task": {
+        "amount": "1.00",
+        "currency": "USD"
+      },
+      "max_per_day": {
+        "amount": "250.00",
+        "currency": "USD"
+      },
+      "max_open_escrow": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "circuit_breaker": {
+        "failed_tasks_per_hour": 20
+      }
+    },
+    "callback_url": "https://buyer.example/arc"
+  }
+}

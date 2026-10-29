@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/attestation.json",
+  "title": "arc/attestation body (bilateral; the only input to reputation)",
+  "type": "object",
+  "required": [
+    "direction",
+    "kind",
+    "receipt_hash",
+    "subject_aid",
+    "rater_aid",
+    "scores"
+  ],
+  "properties": {
+    "direction": {
+      "enum": [
+        "buyer_on_seller",
+        "seller_on_buyer"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "quality",
+        "accuracy",
+        "conduct"
+      ]
+    },
+    "receipt_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "rubric_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "scores": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "common.json#/$defs/score"
+      }
+    },
+    "composite": {
+      "$ref": "common.json#/$defs/score"
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "test_result",
+            "downstream_receipt",
+            "verifier_verdict",
+            "external"
+          ]
+        },
+        "ref": {
+          "type": "string"
+        }
+      }
+    },
+    "subject_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "rater_aid": {
+      "$ref": "common.json#/$defs/aid"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "quality"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "rubric_hash",
+          "composite"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "accuracy"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "evidence"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "conduct"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "direction": {
+            "const": "seller_on_buyer"
+          }
+        }
+      }
+    }
+  ]
+}

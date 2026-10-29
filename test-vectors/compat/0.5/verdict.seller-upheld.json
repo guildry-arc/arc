@@ -1,0 +1,10 @@
+{
+  "dispute_ref": "urn:uuid:00000003-0000-4000-8000-000000000003",
+  "verifier_aid": "arc:mkt.example:VR1F9E2Y3Z4A5B6C",
+  "outcome": "seller_upheld",
+  "adjustments": {
+    "payout_tier": "slo_met",
+    "void_attestation": true
+  },
+  "evidence_hash": "sha256:3a72e5f03d578ab866231e64ff6656f93fbd3691fb8eae5631a1101e633ddcd1"
+}

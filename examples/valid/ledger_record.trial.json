@@ -1,0 +1,21 @@
+{
+  "entry_id": "urn:uuid:00000007-0000-4000-8000-000000000007",
+  "receipt_hash": "sha256:01239cedda410fae5caf6a3f0ac0e9b5af96c049a6b9caddfcd1095c24d16881",
+  "state": "settled",
+  "amount": {
+    "amount": "0",
+    "currency": "USD"
+  },
+  "payout_tier": "slo_met",
+  "seller_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "capability": "invoice-data-extraction",
+  "taxonomy_node": "arc.document.extraction.invoice",
+  "engagement_ref": "sha256:13151606c657c1e3a3aa487a5adedefeb1d416d6434aca07dbae7e34bd4f1a85",
+  "allocation": {
+    "cost_center": "FIN-OPS-114",
+    "project": "ap-automation",
+    "workflow_id": "wf-88"
+  },
+  "event_time": "2026-10-29T10:31:10Z",
+  "trial": true
+}

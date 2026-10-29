@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/receipt.json",
+  "title": "arc/receipt body (the anchor trust object)",
+  "type": "object",
+  "required": [
+    "task_hash",
+    "capability",
+    "taxonomy_node",
+    "buyer_aid",
+    "seller_aid",
+    "engagement_ref",
+    "snapshot_ref",
+    "timestamps",
+    "payment",
+    "seller_sig"
+  ],
+  "properties": {
+    "task_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "capability": {
+      "type": "string"
+    },
+    "taxonomy_node": {
+      "type": "string"
+    },
+    "buyer_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "seller_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "engagement_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "snapshot_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "timestamps": {
+      "type": "object",
+      "required": [
+        "delegated",
+        "delivered"
+      ],
+      "properties": {
+        "delegated": {
+          "$ref": "common.json#/$defs/timestamp"
+        },
+        "delivered": {
+          "$ref": "common.json#/$defs/timestamp"
+        }
+      }
+    },
+    "units": {
+      "type": "object",
+      "properties": {
+        "unit": {
+          "type": "string"
+        },
+        "count": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "required": [
+        "amount",
+        "escrow_ref"
+      ],
+      "properties": {
+        "amount": {
+          "$ref": "common.json#/$defs/money"
+        },
+        "escrow_ref": {
+          "type": "string"
+        },
+        "payout_tier": {
+          "enum": [
+            "slo_met",
+            "latency_miss",
+            "accuracy_miss",
+            "auto_settled"
+          ]
+        }
+      }
+    },
+    "allocation": {
+      "$ref": "common.json#/$defs/allocation"
+    },
+    "seller_sig": {
+      "$ref": "common.json#/$defs/jws"
+    },
+    "buyer_countersig": {
+      "$ref": "common.json#/$defs/jws"
+    },
+    "trial": {
+      "type": "boolean",
+      "default": false,
+      "description": "Task ran under trial terms; amount is the discounted (possibly zero) amount."
+    }
+  }
+}

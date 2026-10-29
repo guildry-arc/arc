@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/policy.json",
+  "title": "arc/policy body (trust policy / discovery query)",
+  "type": "object",
+  "properties": {
+    "intent": {
+      "type": "object",
+      "required": [
+        "need"
+      ],
+      "properties": {
+        "need": {
+          "type": "string",
+          "minLength": 3
+        },
+        "example_input_hash": {
+          "$ref": "common.json#/$defs/hash"
+        },
+        "expected_output_schema": {
+          "$ref": "common.json#/$defs/hash"
+        }
+      }
+    },
+    "taxonomy_node": {
+      "type": "string"
+    },
+    "filters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "dimension"
+        ],
+        "properties": {
+          "dimension": {
+            "type": "string"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "window_days": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "min_samples": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "rater_rep_min": {
+            "$ref": "common.json#/$defs/score"
+          }
+        }
+      }
+    },
+    "rank_by": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "max_price": {
+      "$ref": "common.json#/$defs/money"
+    },
+    "require_probe_verified": {
+      "type": "boolean",
+      "default": true
+    },
+    "include_conditional": {
+      "type": "boolean",
+      "default": false,
+      "description": "Also return capabilities with probe status conditional (spec §7.4)."
+    },
+    "exploration": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "budget_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "intent"
+      ]
+    },
+    {
+      "required": [
+        "taxonomy_node"
+      ]
+    }
+  ]
+}

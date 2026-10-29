@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/offer.json",
+  "title": "arc/offer body (binding terms of hire; also counter-offers via prior_ref)",
+  "type": "object",
+  "required": [
+    "task_hash",
+    "card_ref",
+    "snapshot_ref",
+    "engagement",
+    "slo",
+    "rubric",
+    "payout",
+    "price"
+  ],
+  "properties": {
+    "task_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "card_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "snapshot_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "buyer_snapshot_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "prior_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "engagement": {
+      "type": "object",
+      "description": "arc/engagement body inline"
+    },
+    "slo": {
+      "$ref": "common.json#/$defs/slo"
+    },
+    "rubric": {
+      "$ref": "common.json#/$defs/rubric"
+    },
+    "payout": {
+      "$ref": "common.json#/$defs/payout_table"
+    },
+    "price": {
+      "$ref": "common.json#/$defs/pricing"
+    },
+    "allocation": {
+      "$ref": "common.json#/$defs/allocation"
+    },
+    "trial": {
+      "type": "boolean",
+      "default": false,
+      "description": "Avail the capability's trial terms (spec §6.5)."
+    }
+  }
+}

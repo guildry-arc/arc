@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/test_report.json",
+  "title": "arc/test_report body (tri-state verdict with machine-actionable corrections)",
+  "type": "object",
+  "required": [
+    "subject_aid",
+    "capability",
+    "suite_ref",
+    "context",
+    "cases",
+    "verdict",
+    "issuer_aid"
+  ],
+  "properties": {
+    "subject_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "capability": {
+      "type": "string"
+    },
+    "suite_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "context": {
+      "enum": [
+        "probe",
+        "trial",
+        "dispute",
+        "certification"
+      ]
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "verdict"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "pass",
+              "fail"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "fail",
+        "conditional_pass"
+      ],
+      "description": "Closed enum (spec §7.4)."
+    },
+    "corrections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "criterion",
+          "severity",
+          "observed",
+          "expected",
+          "retest_by"
+        ],
+        "properties": {
+          "criterion": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "blocking",
+              "advisory"
+            ]
+          },
+          "observed": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "retest_by": {
+            "$ref": "common.json#/$defs/timestamp"
+          }
+        }
+      }
+    },
+    "retest": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "enum": [
+            "failed_cases",
+            "full_suite"
+          ]
+        },
+        "limit_remaining": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "receipt_ref": {
+      "$ref": "common.json#/$defs/hash",
+      "description": "Receipt under test, for trial and dispute contexts."
+    },
+    "dispute_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "issuer_aid": {
+      "$ref": "common.json#/$defs/aid",
+      "description": "Probe runner, verifier, or trial buyer."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "conditional_pass"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "required": [
+          "corrections"
+        ],
+        "properties": {
+          "corrections": {
+            "contains": {
+              "properties": {
+                "severity": {
+                  "const": "blocking"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "pass"
+          }
+        },
+        "required": [
+          "verdict"
+        ]
+      },
+      "then": {
+        "properties": {
+          "corrections": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "severity": {
+                    "const": "blocking"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

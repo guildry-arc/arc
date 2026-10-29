@@ -1,0 +1,33 @@
+{
+  "subject_aid": "arc:mkt.example:7K3MQ9P2XXTR84LN",
+  "capability": "invoice-data-extraction",
+  "suite_ref": "sha256:dc11a0764b4245141b685c234e4c43a2aa7dbf5d9ace3e239c7cd8e81547cdaa",
+  "context": "probe",
+  "cases": [
+    {
+      "case_id": "inv-016",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "inv-017",
+      "verdict": "fail",
+      "detail": "date not ISO 8601"
+    }
+  ],
+  "verdict": "conditional_pass",
+  "corrections": [
+    {
+      "criterion": "dates_iso",
+      "severity": "blocking",
+      "observed": "12/03/2026",
+      "expected": "2026-03-12",
+      "description": "Normalize all dates to ISO 8601.",
+      "retest_by": "2026-11-05T00:00:00Z"
+    }
+  ],
+  "retest": {
+    "scope": "failed_cases",
+    "limit_remaining": 2
+  },
+  "issuer_aid": "arc:mkt.example:PRB1Q7XK4M9TR2WD"
+}

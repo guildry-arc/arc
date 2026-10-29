@@ -1,0 +1,25 @@
+{
+  "subject_aid": "arc:mkt.example:7K3MQ9P2XXTR84LN",
+  "capability": "invoice-data-extraction",
+  "suite_ref": "sha256:24c0509d534ee08b70bb4e4dd74f08e14ba977eaf434b5cee4380d7c239d9d6f",
+  "context": "trial",
+  "cases": [
+    {
+      "case_id": "vendor-tax-ids",
+      "verdict": "fail",
+      "detail": "VAT id missing on 6 of 40 invoices"
+    }
+  ],
+  "verdict": "fail",
+  "corrections": [
+    {
+      "criterion": "vendor_tax_id",
+      "severity": "advisory",
+      "observed": "tax_id null",
+      "expected": "tax_id populated when printed on invoice",
+      "retest_by": "2026-11-12T00:00:00Z"
+    }
+  ],
+  "receipt_ref": "sha256:01239cedda410fae5caf6a3f0ac0e9b5af96c049a6b9caddfcd1095c24d16881",
+  "issuer_aid": "arc:mkt.example:BQ7TZ2M4K8XN3PRA"
+}

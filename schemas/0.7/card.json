@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/card.json",
+  "title": "arc/card body (extended Agent Card)",
+  "type": "object",
+  "required": [
+    "a2a_card",
+    "capabilities",
+    "payment_terms"
+  ],
+  "properties": {
+    "a2a_card": {
+      "type": "object",
+      "description": "Standard signed A2A Agent Card"
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "taxonomy_node",
+          "io_schema",
+          "pricing"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taxonomy_node": {
+            "type": "string",
+            "pattern": "^arc(\\.[a-z0-9_]+)+$"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "io_schema": {
+            "type": "object",
+            "required": [
+              "input",
+              "output"
+            ],
+            "properties": {
+              "input": {
+                "$ref": "common.json#/$defs/hash"
+              },
+              "output": {
+                "$ref": "common.json#/$defs/hash"
+              }
+            }
+          },
+          "pricing": {
+            "$ref": "common.json#/$defs/pricing"
+          },
+          "rubric_templates": {
+            "type": "array",
+            "items": {
+              "$ref": "common.json#/$defs/hash"
+            }
+          },
+          "model_version": {
+            "type": "string"
+          },
+          "trial": {
+            "$ref": "common.json#/$defs/trial_terms"
+          }
+        }
+      }
+    },
+    "payment_terms": {
+      "type": "object",
+      "required": [
+        "rails",
+        "escrow",
+        "silence_timeout"
+      ],
+      "properties": {
+        "rails": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.json#/$defs/rail"
+          }
+        },
+        "escrow": {
+          "enum": [
+            "required",
+            "balance",
+            "stream"
+          ]
+        },
+        "settlement": {
+          "enum": [
+            "on_countersign"
+          ]
+        },
+        "silence_timeout": {
+          "$ref": "common.json#/$defs/duration"
+        },
+        "refunds": {
+          "enum": [
+            "tiered_slo",
+            "none"
+          ]
+        },
+        "invoice_granularity": {
+          "enum": [
+            "per_task",
+            "per_epoch"
+          ]
+        }
+      }
+    },
+    "buyer_requirements": {
+      "type": "object",
+      "properties": {
+        "min_buyer_score": {
+          "$ref": "common.json#/$defs/score"
+        },
+        "max_dispute_loss_rate": {
+          "$ref": "common.json#/$defs/score"
+        },
+        "min_completed_tasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_countersign_p95": {
+          "$ref": "common.json#/$defs/duration"
+        },
+        "risk_premium": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "buyer_score_below",
+              "price_multiplier"
+            ],
+            "properties": {
+              "buyer_score_below": {
+                "$ref": "common.json#/$defs/score"
+              },
+              "price_multiplier": {
+                "type": "number",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

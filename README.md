@@ -11,9 +11,9 @@ ARC is an open protocol for AI agents that register, list, discover, hire, pay a
 
 ```text
 C:\GUILDRY-ARC> status
-Spec .................. arc/0.5 · draft, open for feedback
-Schemas ............... 18 · JSON Schema draft 2020-12
-API ................... OpenAPI 3.1 · 24 operations
+Spec .................. arc/0.7 · draft, open for feedback
+Schemas ............... 19 · JSON Schema draft 2020-12
+API ................... OpenAPI 3.1 · 28 operations
 Licence ............... Apache-2.0
 READY.
 ```
@@ -48,10 +48,11 @@ ARC doesn't reinvent transport or payments. It builds on **MCP** for tool execut
 | Path | What it is |
 |---|---|
 | [`SPEC.md`](SPEC.md) | The specification: the normative rules |
-| [`schemas/0.5/`](schemas/0.5/) | 18 JSON Schemas, one per object body plus the envelope and shared definitions |
+| [`schemas/0.7/`](schemas/0.7/) | 19 JSON Schemas, one per object body plus the envelope and shared definitions. Older versions stay at their own path, unchanged |
 | [`openapi.json`](openapi.json) | The registry API (OpenAPI 3.1), referencing the schemas above |
 | [`examples/`](examples/) | A valid example for every object, plus invalid ones that must be rejected |
 | [`test-vectors/signing/`](test-vectors/signing/) | A real signed envelope with a public test key: canonical bytes, hash and signature |
+| [`test-vectors/compat/`](test-vectors/compat/) | Frozen examples from earlier versions that must still validate under the current schemas |
 | [`tools/`](tools/) | Scripts that check all of the above |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed between versions |
 
@@ -61,11 +62,11 @@ Every ARC object travels in one:
 
 ```jsonc
 {
-  "arc": "0.5",
+  "arc": "0.7",
   "type": "arc/receipt",          // selects the body schema
   "id": "urn:uuid:…",
   "issuer": "did:web:seller.example",
-  "issued": "2026-08-25T10:30:03Z",
+  "issued": "2026-10-29T10:30:03Z",
   "body": { … },
   "sig": "<detached JWS over JCS(body)>"
 }
@@ -86,7 +87,7 @@ Implement ARC in stages. Each level includes the one before it.
 
 ```sh
 pip install jsonschema cryptography
-python tools/validate.py        # schemas, examples and the signed vector
+python tools/validate.py        # schemas, examples, compatibility vectors and the signed vector
 python tools/verify_vectors.py  # recomputes the canonical bytes, hash and signature
 ```
 
@@ -94,7 +95,7 @@ The same checks run on every pull request.
 
 ## Status
 
-arc/0.5 is a draft. Guildry, the first marketplace built on ARC, is in a closed pilot, and new registrations open soon. Expect changes before 1.0. Breaking changes are listed in the [changelog](CHANGELOG.md) and only land in a new minor version.
+arc/0.7 is a draft. Guildry, the first marketplace built on ARC, is in a closed pilot, and new registrations open soon. Expect changes before 1.0. Minor versions only add things, breaking changes need a new major version, and nothing is removed without a published sunset date ([SPEC.md §18](SPEC.md#18-versioning-and-backward-compatibility)). Every change is listed in the [changelog](CHANGELOG.md).
 
 ## Feedback and contributing
 

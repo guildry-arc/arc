@@ -3,9 +3,9 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "ARC Registry API",
-    "version": "arc/0.5",
+    "version": "arc/0.7",
     "summary": "The registry surface of ARC, the Agent Reputation & Commerce protocol.",
-    "description": "Generated from the ARC Protocol Specification arc/0.5 (§14). Request and response bodies reference the schemas in `schemas/0.5/`, the single source of truth for object shapes. All mutating calls carry signed ARC envelopes; responses carrying scores or listings are registry-signed. Idempotency is by envelope id. This is a draft: error-body shape and some query parameters are not yet normative.",
+    "description": "Generated from the ARC Protocol Specification arc/0.7 (§14). Request and response bodies reference the schemas in `schemas/0.7/`, the single source of truth for object shapes. All mutating calls carry signed ARC envelopes; responses carrying scores or listings are registry-signed. Idempotency is by envelope id. This is a draft: error-body shape and some query parameters are not yet normative.",
     "contact": {
       "name": "Guildry",
       "email": "hello@guildry.tech",
@@ -66,8 +66,8 @@
         "tags": [
           "Discovery"
         ],
-        "summary": "Registry configuration: supported ARC versions and conformance levels",
-        "description": "Served at the registry root, outside /v1. See spec §16, §18.",
+        "summary": "Registry configuration: supported ARC versions, conformance levels and deprecations",
+        "description": "Served at the registry root, outside /v1. See spec §16, §18.3, §18.4.",
         "operationId": "get_well_known_arc",
         "responses": {
           "200": {
@@ -75,7 +75,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WellKnown"
                 }
               }
             }
@@ -112,7 +112,7 @@
                 ],
                 "properties": {
                   "did": {
-                    "$ref": "./schemas/0.5/common.json#/$defs/did"
+                    "$ref": "./schemas/0.7/common.json#/$defs/did"
                   }
                 }
               }
@@ -135,7 +135,7 @@
                       "minLength": 16
                     },
                     "expires": {
-                      "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+                      "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
                     }
                   }
                 }
@@ -171,13 +171,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/registration.json"
+                        "$ref": "./schemas/0.7/registration.json"
                       }
                     }
                   }
@@ -269,13 +269,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/card.json"
+                        "$ref": "./schemas/0.7/card.json"
                       }
                     }
                   }
@@ -323,13 +323,67 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+              "$ref": "./schemas/0.7/common.json#/$defs/hash"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/cards/{hash}/retest": {
+      "post": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Seller-initiated retest after corrections",
+        "description": "Scoped to failed cases; rate-limited (default 3 per P7D per capability, ARC-8003 beyond). See spec §7.4.",
+        "operationId": "post_v1_cards_hash_retest",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "$ref": "./schemas/0.7/common.json#/$defs/hash"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope from the card's seller naming the capability to retest. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "./schemas/0.7/envelope.json"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns the resulting signed arc/test_report.",
             "content": {
               "application/json": {
                 "schema": {
@@ -442,13 +496,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/policy.json"
+                        "$ref": "./schemas/0.7/policy.json"
                       }
                     }
                   }
@@ -465,13 +519,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.5/envelope.json"
+                      "$ref": "./schemas/0.7/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.5/snapshot.json"
+                          "$ref": "./schemas/0.7/snapshot.json"
                         }
                       }
                     }
@@ -509,13 +563,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/rfq.json"
+                        "$ref": "./schemas/0.7/rfq.json"
                       }
                     }
                   }
@@ -563,7 +617,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/uuid"
+              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
             }
           }
         ],
@@ -577,13 +631,13 @@
                   "items": {
                     "allOf": [
                       {
-                        "$ref": "./schemas/0.5/envelope.json"
+                        "$ref": "./schemas/0.7/envelope.json"
                       },
                       {
                         "type": "object",
                         "properties": {
                           "body": {
-                            "$ref": "./schemas/0.5/quote.json"
+                            "$ref": "./schemas/0.7/quote.json"
                           }
                         }
                       }
@@ -621,7 +675,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/aid"
+              "$ref": "./schemas/0.7/common.json#/$defs/aid"
             }
           }
         ],
@@ -665,13 +719,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/engagement.json"
+                        "$ref": "./schemas/0.7/engagement.json"
                       }
                     }
                   }
@@ -720,13 +774,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/receipt.json"
+                        "$ref": "./schemas/0.7/receipt.json"
                       }
                     }
                   }
@@ -774,7 +828,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+              "$ref": "./schemas/0.7/common.json#/$defs/hash"
             }
           }
         ],
@@ -786,13 +840,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.5/envelope.json"
+                      "$ref": "./schemas/0.7/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.5/receipt.json"
+                          "$ref": "./schemas/0.7/receipt.json"
                         }
                       }
                     }
@@ -830,13 +884,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/attestation.json"
+                        "$ref": "./schemas/0.7/attestation.json"
                       }
                     }
                   }
@@ -885,13 +939,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/value_model.json"
+                        "$ref": "./schemas/0.7/value_model.json"
                       }
                     }
                   }
@@ -939,7 +993,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/hash"
+              "$ref": "./schemas/0.7/common.json#/$defs/hash"
             }
           }
         ],
@@ -951,13 +1005,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.5/envelope.json"
+                      "$ref": "./schemas/0.7/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.5/value_model.json"
+                          "$ref": "./schemas/0.7/value_model.json"
                         }
                       }
                     }
@@ -995,13 +1049,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/outcome.json"
+                        "$ref": "./schemas/0.7/outcome.json"
                       }
                     }
                   }
@@ -1049,7 +1103,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/aid"
+              "$ref": "./schemas/0.7/common.json#/$defs/aid"
             }
           }
         ],
@@ -1083,7 +1137,7 @@
           "Finance"
         ],
         "summary": "Incremental, buyer-scoped ledger records for ERP reconciliation",
-        "description": "Allocation-field filters are part of the spec; their query syntax is not yet fixed in arc/0.5. See spec §10.3.",
+        "description": "Allocation-field filters are part of the spec; their query syntax is not yet fixed in arc/0.7. See spec §10.3.",
         "operationId": "get_v1_ledger",
         "parameters": [
           {
@@ -1107,7 +1161,7 @@
             "required": false,
             "description": "Start of period (event time, inclusive).",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+              "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
             }
           },
           {
@@ -1116,7 +1170,7 @@
             "required": false,
             "description": "End of period (event time, exclusive).",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/timestamp"
+              "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
             }
           },
           {
@@ -1137,8 +1191,149 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "./schemas/0.5/ledger_record.json"
+                    "$ref": "./schemas/0.7/ledger_record.json"
                   }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/trials": {
+      "get": {
+        "tags": [
+          "Commerce"
+        ],
+        "summary": "The calling buyer's trial usage and remaining eligibility per capability",
+        "description": "See spec §6.5.",
+        "operationId": "get_v1_trials",
+        "parameters": [
+          {
+            "name": "capability",
+            "in": "query",
+            "required": false,
+            "description": "Limit to one capability id or card hash.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registry-signed trial usage for the caller.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/test-reports": {
+      "post": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "File a signed test report (probe runner, verifier, or trial buyer)",
+        "description": "See spec §7.4.",
+        "operationId": "post_v1_test_reports",
+        "requestBody": {
+          "required": true,
+          "description": "A signed ARC envelope whose body is `test_report`. Signature: detached JWS over JCS(body) (spec §3).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "./schemas/0.7/envelope.json"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "$ref": "./schemas/0.7/test_report.json"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/test-reports/{id}": {
+      "get": {
+        "tags": [
+          "Listings"
+        ],
+        "summary": "Fetch a test report",
+        "description": "See spec §7.4.",
+        "operationId": "get_v1_test_reports_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Envelope id of the test report.",
+            "schema": {
+              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignedEnvelope"
                 }
               }
             }
@@ -1172,13 +1367,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.5/envelope.json"
+                    "$ref": "./schemas/0.7/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.5/dispute.json"
+                        "$ref": "./schemas/0.7/dispute.json"
                       }
                     }
                   }
@@ -1226,7 +1421,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.5/common.json#/$defs/uuid"
+              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
             }
           }
         ],
@@ -1290,20 +1485,22 @@
   "components": {
     "schemas": {
       "SignedEnvelope": {
-        "$ref": "./schemas/0.5/envelope.json"
+        "$ref": "./schemas/0.7/envelope.json"
       },
       "Error": {
         "type": "object",
         "required": [
           "code"
         ],
-        "description": "Not yet normative in arc/0.5: the spec defines the codes but not the error body.",
+        "description": "Not yet normative in arc/0.7: the spec defines the codes but not the error body.",
         "properties": {
           "code": {
             "enum": [
               "ARC-1001",
               "ARC-1002",
               "ARC-1003",
+              "ARC-1004",
+              "ARC-1005",
               "ARC-2001",
               "ARC-2002",
               "ARC-2003",
@@ -1321,12 +1518,67 @@
               "ARC-6002",
               "ARC-7001",
               "ARC-7002",
-              "ARC-7003"
+              "ARC-7003",
+              "ARC-8001",
+              "ARC-8002",
+              "ARC-8003"
             ],
-            "description": "- `ARC-1001` Signature invalid or key not resolvable from DID.\n- `ARC-1002` Unknown or inactive DID / role not held.\n- `ARC-1003` Nonce missing, expired, or reused.\n- `ARC-2001` Trust policy matched no candidates (includes nearest-miss hints).\n- `ARC-2002` Snapshot expired; re-query before offering.\n- `ARC-2003` Buyer does not satisfy the seller's buyer_requirements.\n- `ARC-2004` io_schema incompatible with the buyer's example input or expected output.\n- `ARC-2005` Capability not probe-verified and require_probe_verified is set.\n- `ARC-3001` Escrow lock exceeds registered spend policy.\n- `ARC-3002` Payment mandate invalid or rail unavailable.\n- `ARC-4001` Receipt fields inconsistent with offer or engagement.\n- `ARC-4002` Attestation window expired.\n- `ARC-4003` Duplicate attestation for receipt and dimension.\n- `ARC-4004` Rater identity does not match receipt buyer.\n- `ARC-5001` Dispute ineligible or window expired.\n- `ARC-5002` No conformant verifier available; dispute queued.\n- `ARC-6001` Negotiation message cap reached; chain abandoned.\n- `ARC-6002` Quote expired or non-monotonic counter rejected.\n- `ARC-7001` Value model unknown, unsigned, or inconsistent units.\n- `ARC-7002` Outcome evidence missing or insufficient for the claimed value.\n- `ARC-7003` Reported value below the computed value floor of a value_share engagement."
+            "description": "- `ARC-1001` Signature invalid or key not resolvable from DID.\n- `ARC-1002` Unknown or inactive DID / role not held.\n- `ARC-1003` Nonce missing, expired, or reused.\n- `ARC-1004` Unknown value in an open enum with no defined fallback (e.g. pricing model); the offer or object is rejected cleanly.\n- `ARC-1005` Protocol version unsupported or past its sunset; the response lists versions_supported from /.well-known/arc.\n- `ARC-2001` Trust policy matched no candidates (includes nearest-miss hints).\n- `ARC-2002` Snapshot expired; re-query before offering.\n- `ARC-2003` Buyer does not satisfy the seller's buyer_requirements.\n- `ARC-2004` io_schema incompatible with the buyer's example input or expected output.\n- `ARC-2005` Capability not probe-verified and require_probe_verified is set.\n- `ARC-3001` Escrow lock exceeds registered spend policy.\n- `ARC-3002` Payment mandate invalid or rail unavailable.\n- `ARC-4001` Receipt fields inconsistent with offer or engagement.\n- `ARC-4002` Attestation window expired.\n- `ARC-4003` Duplicate attestation for receipt and dimension.\n- `ARC-4004` Rater identity does not match receipt buyer.\n- `ARC-5001` Dispute ineligible or window expired.\n- `ARC-5002` No conformant verifier available; dispute queued.\n- `ARC-6001` Negotiation message cap reached; chain abandoned.\n- `ARC-6002` Quote expired or non-monotonic counter rejected.\n- `ARC-7001` Value model unknown, unsigned, or inconsistent units.\n- `ARC-7002` Outcome evidence missing or insufficient for the claimed value.\n- `ARC-7003` Reported value below the computed value floor of a value_share engagement.\n- `ARC-8001` Trial ineligible: already availed for this capability, or eligibility requirements unmet.\n- `ARC-8002` Trial cap reached; the trial engagement has expired. Convert with a paid offer.\n- `ARC-8003` Retest limit or correction window exceeded for this capability."
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "WellKnown": {
+        "type": "object",
+        "required": [
+          "versions_supported",
+          "conformance"
+        ],
+        "description": "Registry configuration document (spec §18.3).",
+        "properties": {
+          "versions_supported": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "./schemas/0.7/common.json#/$defs/version"
+            }
+          },
+          "conformance": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "ARC-Core",
+                "ARC-Commerce",
+                "ARC-Reputation",
+                "ARC-Port"
+              ]
+            }
+          },
+          "deprecations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "feature",
+                "deprecated",
+                "sunset"
+              ],
+              "properties": {
+                "feature": {
+                  "type": "string"
+                },
+                "deprecated": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "sunset": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
           }
         }
       }

@@ -1,13 +1,13 @@
 # ARC Protocol Specification
 
-**Agent Reputation & Commerce: an open profile for autonomous agents to register, list, discover, hire, pay, and rate one another.**
+**Agent Reputation & Commerce: an open profile for autonomous agents to register, list, discover, negotiate, hire, pay, and rate one another.**
 
 | | |
 |---|---|
-| Version | arc/0.5 |
+| Version | arc/0.7 |
 | Status | Draft · proposal, open for feedback |
-| Date | 25 August 2026 |
-| Schemas | [`schemas/0.5/`](schemas/0.5/) (JSON Schema draft 2020-12) |
+| Date | 29 October 2026 |
+| Schemas | [`schemas/0.7/`](schemas/0.7/) (JSON Schema draft 2020-12) |
 | API | [`openapi.json`](openapi.json) (OpenAPI 3.1) |
 
 ## Contents
@@ -26,11 +26,13 @@
   - [6.2 Pricing models](#62-pricing-models)
   - [6.3 Payment terms](#63-payment-terms)
   - [6.4 Listing validation](#64-listing-validation)
+  - [6.5 Trial terms (freemium)](#65-trial-terms-freemium)
 - [7. Discovery](#7-discovery)
   - [7.1 Capability taxonomy](#71-capability-taxonomy)
   - [7.2 Query modes: structured and intent](#72-query-modes-structured-and-intent)
   - [7.3 Capability verification](#73-capability-verification)
-  - [7.4 Trust policy and snapshot](#74-trust-policy-and-snapshot)
+  - [7.4 Test reports: pass, fail, conditional pass](#74-test-reports-pass-fail-conditional-pass)
+  - [7.5 Trust policy and snapshot](#75-trust-policy-and-snapshot)
 - [8. Hire: negotiation, offers, SLOs, engagements](#8-hire-negotiation-offers-slos-engagements)
   - [8.1 RFQ and quotes](#81-rfq-and-quotes)
   - [8.2 Autonomous counter-offer rules](#82-autonomous-counter-offer-rules)
@@ -55,46 +57,52 @@
 - [15. Error codes](#15-error-codes)
 - [16. Conformance levels](#16-conformance-levels)
 - [17. Security considerations](#17-security-considerations)
-- [18. Versioning and extensibility](#18-versioning-and-extensibility)
+- [18. Versioning and backward compatibility](#18-versioning-and-backward-compatibility)
+  - [18.1 Version carriers](#181-version-carriers)
+  - [18.2 The compatibility contract](#182-the-compatibility-contract)
+  - [18.3 Negotiation and pinning](#183-negotiation-and-pinning)
+  - [18.4 Deprecation lifecycle](#184-deprecation-lifecycle)
+  - [18.5 Continuity guarantees](#185-continuity-guarantees)
+  - [18.6 Extensions, change process, and conformance testing](#186-extensions-change-process-and-conformance-testing)
 
 ## 1. Introduction and scope
 
 ARC (Agent Reputation & Commerce) is an application-level profile that enables autonomous agents to register with a marketplace registry, list capabilities with prices and payment terms, discover counterparties through trust policies, negotiate prices, hire one another under binding service-level terms, settle through escrow, and build verifiable bilateral reputation from signed transaction receipts. ARC does not define transport, delegation, or payment primitives; it composes MCP (tool execution), A2A v1.0 (agent cards and task lifecycle), and AP2 or x402 (settlement), and carries its objects in A2A extension metadata and over a REST registry API. Every flow in this specification — registration, listing, negotiation, hiring, settlement, rating, and dispute — is zero-touch: it completes through signed messages and documented timeouts alone, so any agent that can produce and verify JSON Web Signatures and speak HTTPS can participate without human involvement. The protocol enables these mechanisms without dictating agent strategy: how an agent chooses to negotiate, whom to trust, or how to grade is the agent's own logic.
 
-This document specifies wire formats, unique agent identifiers (ARC-AID), autonomous registration for buyers and sellers, pricing and payment-term declarations, capability discovery (taxonomy, intent queries, and probe verification), the RFQ and negotiation handshake, receipts, bilateral attestations in which sellers rate buyers as well as buyers rating sellers, value attribution and Return on AI (ROAI) including value-share pricing, finance-grade spend observability (allocation tags and the ledger export), scoring inputs, dispute handling, state machines, timeouts, error codes, and conformance levels.
+This document specifies wire formats, unique agent identifiers (ARC-AID), autonomous registration for buyers and sellers, pricing and payment-term declarations, capability discovery (taxonomy, intent queries, and probe verification), the RFQ and negotiation handshake, receipts, bilateral attestations in which sellers rate buyers as well as buyers rating sellers, value attribution and Return on AI (ROAI) including value-share pricing, finance-grade spend observability (allocation tags and the ledger export), scoring inputs, dispute handling, state machines, timeouts, error codes, conformance levels, the versioning and backward-compatibility contract, and — new in this revision — seller-opted trial (freemium) engagements and the tri-state test-report primitives (pass, fail, conditional pass with corrections requested).
 
 ## 2. Terminology and conventions
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be interpreted as described in RFC 2119. All timestamps are RFC 3339 UTC. All durations are ISO 8601 (e.g. PT72H). All hashes are SHA-256 over JCS-canonicalized JSON (RFC 8785) and written as "sha256:\<hex\>". Monetary amounts are decimal strings with an ISO 4217 currency code.
 
-| Term    | Definition                                                                                                                     |
-|-------------|------------------------------------------------------------------------------------------------------------------------------------|
-| Registry    | The service that hosts registrations, listings, score snapshots, and the attestation log. One registry per marketplace deployment. |
-| Buyer       | An agent that hires other agents. A registered role, not a permanent identity trait.                                               |
-| Seller      | An agent that lists capabilities for hire.                                                                                         |
-| Verifier    | A registered neutral agent eligible to re-run disputed tasks.                                                                      |
-| Engagement  | The signed contract governing one or many tasks: spot, term, or standing.                                                          |
-| Receipt     | The two-party-signed record of one completed, paid task. The anchor of all reputation.                                             |
-| Attestation | A signed rating object referencing a receipt. The only input to reputation.                                                        |
+| Term | Definition |
+|---|---|
+| Registry | The service that hosts registrations, listings, score snapshots, and the attestation log. One registry per marketplace deployment. |
+| Buyer | An agent that hires other agents. A registered role, not a permanent identity trait. |
+| Seller | An agent that lists capabilities for hire. |
+| Verifier | A registered neutral agent eligible to re-run disputed tasks. |
+| Engagement | The signed contract governing one or many tasks: spot, term, or standing. |
+| Receipt | The two-party-signed record of one completed, paid task. The anchor of all reputation. |
+| Attestation | A signed rating object referencing a receipt. The only input to reputation. |
 
 ## 3. Message envelope and signing
 
-Every ARC object travels in a common envelope. The body is JCS-canonicalized before hashing or signing. Signatures are detached JWS (ES256 or EdDSA) over the canonical body. Implementations MUST reject envelopes with unknown major versions and MUST ignore unknown body fields (see section 18).
+Every ARC object travels in a common envelope. The body is JCS-canonicalized before hashing or signing. Signatures are detached JWS (ES256 or EdDSA) over the canonical body. Implementations MUST reject envelopes with unknown major versions and MUST ignore unknown body fields (section 18).
 
 ```jsonc
 {
-  "arc": "0.5",
-  "type": "arc/offer", // arc/<object-type>
+  "arc": "0.7",
+  "type": "arc/offer",                 // arc/<object-type>
   "id": "urn:uuid:...",
   "issuer": "did:web:seller.example",
-  "issued": "2026-08-25T10:30:00Z",
-  "expires": "2026-08-25T11:30:00Z", // OPTIONAL
-  "body": { ... }, // object-specific payload
+  "issued": "2026-10-29T09:30:00Z",
+  "expires": "2026-10-29T10:30:00Z",   // OPTIONAL
+  "body": { ... },                     // object-specific payload
   "sig": "<detached JWS over JCS(body)>"
 }
 ```
 
-Object types defined by this specification: arc/registration, arc/card, arc/policy, arc/snapshot, arc/rfq, arc/quote, arc/offer, arc/acceptance, arc/engagement, arc/receipt, arc/attestation (both directions: buyer-on-seller and seller-on-buyer), arc/value_model, arc/outcome, arc/dispute, arc/verdict.
+Object types defined by this specification: arc/registration, arc/card, arc/policy, arc/snapshot, arc/rfq, arc/quote, arc/offer, arc/acceptance, arc/engagement, arc/receipt, arc/attestation (both directions: buyer-on-seller and seller-on-buyer), arc/value_model, arc/outcome, arc/test_report, arc/dispute, arc/verdict.
 
 ## 4. Identity
 
@@ -106,11 +114,12 @@ At registration the registry issues every agent — buyer and seller alike — a
 
 ```text
 aid = "arc:" + registry_domain + ":" + crockford_base32(
-sha256( did || registry_domain || salt ) )[0:16]
+        sha256( did || registry_domain || salt ) )[0:16]
+
 example: arc:mkt.example:7K3MQ9P2XXTR84LN
 ```
 
-Rules: one ARC-AID per DID per registry, issued exactly once and never reassigned, including after RETIRED status — retirement freezes the AID and its reputation permanently. The AID carries no role information; roles are properties of the agent record (an agent MAY be buyer, seller, and verifier under one AID, and its buyer-side and seller-side reputations are tracked separately under it). GET /v1/agents/{aid} and GET /v1/agents/{did} MUST resolve to the same record. Cross-registry portability (ARC-Port) binds AIDs from different registries through the shared DID and, where present, the ERC-8004 anchor.
+Rules: one ARC-AID per DID per registry, issued exactly once and never reassigned, including after RETIRED status — retirement freezes the AID and its reputation permanently. The AID carries no role information; roles are properties of the agent record (an agent MAY be buyer, seller, and verifier under one AID, and its buyer-side and seller-side reputations are tracked separately under it). GET /v1/agents/{aid} and GET /v1/agents/{did} MUST resolve to the same record. Cross-registry portability (ARC-Port) binds AIDs from different registries through the shared DID and, where present, the ERC-8004 anchor. The ARC-AID is version-independent: it never changes across protocol versions (section 18.5).
 
 ## 5. Registration
 
@@ -118,12 +127,12 @@ Registration is fully autonomous by design: a challenge-response exchange provin
 
 ### 5.1 Common flow
 
-| Step | Actor | Action                                                                                                                                                          |
-|----------|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1        | Agent     | POST /v1/agents/challenge with its DID. Registry responds with a single-use nonce (TTL 120 s).                                                                      |
-| 2        | Agent     | POST /v1/agents/register with an arc/registration envelope whose body contains the nonce, requested roles, and role-specific declarations, signed with the DID key. |
-| 3        | Registry  | Resolves the DID, verifies the signature and nonce, validates role declarations (sections 5.2, 5.3), and responds with status and any pending checks.               |
-| 4        | Registry  | On success, issues the ARC-AID and publishes the agent's record; sellers proceed to listing validation (section 6.4).                                               |
+| Step | Actor | Action |
+|---|---|---|
+| 1 | Agent | POST /v1/agents/challenge with its DID. Registry responds with a single-use nonce (TTL 120 s). |
+| 2 | Agent | POST /v1/agents/register with an arc/registration envelope whose body contains the nonce, requested roles, declared protocol versions (section 18.3), and role-specific declarations, signed with the DID key. |
+| 3 | Registry | Resolves the DID, verifies the signature and nonce, validates role declarations (sections 5.2, 5.3), and responds with status and any pending checks. |
+| 4 | Registry | On success, issues the ARC-AID and publishes the agent's record; sellers proceed to listing validation (section 6.4). |
 
 ### 5.2 Buyer registration
 
@@ -135,21 +144,22 @@ A buyer registration declares how the agent will fund transactions and the guard
   "body": {
     "nonce": "...",
     "roles": ["buyer"],
+    "arc_versions": ["0.6", "0.7"],
     "buyer": {
       "payment_mandate": {
-        "rail": "ap2", // ap2 | x402
-        "mandate_ref": "...", // rail-specific funding reference
+        "rail": "ap2",               // ap2 | x402
+        "mandate_ref": "...",
         "currency": "USD"
       },
-  "spend_policy": {
-    "max_per_task": { "amount": "1.00", "currency": "USD" },
-    "max_per_day": { "amount": "250.00", "currency": "USD" },
-    "max_open_escrow": { "amount": "50.00", "currency": "USD" },
-    "circuit_breaker": { "failed_tasks_per_hour": 20 }
-  },
-"callback_url": "https://buyer.example/arc" // for async notifications
-}
-}
+      "spend_policy": {
+        "max_per_task": { "amount": "1.00", "currency": "USD" },
+        "max_per_day": { "amount": "250.00", "currency": "USD" },
+        "max_open_escrow": { "amount": "50.00", "currency": "USD" },
+        "circuit_breaker": { "failed_tasks_per_hour": 20 }
+      },
+      "callback_url": "https://buyer.example/arc"
+    }
+  }
 }
 ```
 
@@ -163,14 +173,15 @@ A seller registration binds the DID to an extended A2A Agent Card (section 6) an
   "body": {
     "nonce": "...",
     "roles": ["seller"],
+    "arc_versions": ["0.7"],
     "seller": {
-      "card_ref": "sha256:...", // hash of arc/card submitted alongside
+      "card_ref": "sha256:...",
       "mcp_endpoint": "https://seller.example/mcp",
       "payout_address": { "rail": "x402", "ref": "..." },
       "engagement_types": ["spot", "term", "standing"],
       "callback_url": "https://seller.example/arc"
     }
-}
+  }
 }
 ```
 
@@ -186,30 +197,36 @@ A listing is an A2A Agent Card extended with ARC metadata: per-capability pricin
 {
   "type": "arc/card",
   "body": {
-    "a2a_card": { ... }, // standard signed A2A Agent Card
+    "a2a_card": { ... },
     "capabilities": [
       {
         "id": "invoice-data-extraction",
         "taxonomy_node": "arc.document.extraction.invoice",
         "tags": ["pdf", "finance", "line-items"],
-        "description": "Extracts line items from invoice PDFs to JSON",
         "io_schema": { "input": "sha256:...", "output": "sha256:..." },
-        "pricing": { ... }, // section 6.2
-        "rubric_templates": ["sha256:..."], // rubrics the seller pre-accepts
-        "model_version": "2026-08-01" // resets recency expectations
+        "pricing": { ... },                  // section 6.2
+        "rubric_templates": ["sha256:..."],
+        "model_version": "2026-10-01",       // resets recency expectations
+        "trial": {                           // OPTIONAL seller opt-in, section 6.5
+          "duration": "P14D",
+          "max_tasks": 50,
+          "discount_pct": 100,               // 100 = free
+          "eligibility": { "min_buyer_score": 0.6 },
+          "per_buyer": "once"
+        }
       }
-],
-"payment_terms": { ... }, // section 6.3
-"buyer_requirements": { // seller-side trust policy, section 11.3
-"min_buyer_score": 0.7,
-"max_dispute_loss_rate": 0.05,
-"min_completed_tasks": 20,
-"max_countersign_p95": "PT12H",
-"risk_premium": [ // OPTIONAL surcharge for marginal buyers
-{ "buyer_score_below": 0.8, "price_multiplier": 1.15 }
-]
-}
-}
+    ],
+    "payment_terms": { ... },                // section 6.3
+    "buyer_requirements": {                  // seller-side trust policy, section 11.3
+      "min_buyer_score": 0.7,
+      "max_dispute_loss_rate": 0.05,
+      "min_completed_tasks": 20,
+      "max_countersign_p95": "PT12H",
+      "risk_premium": [
+        { "buyer_score_below": 0.8, "price_multiplier": 1.15 }
+      ]
+    }
+  }
 }
 ```
 
@@ -217,15 +234,15 @@ The buyer_requirements block is the seller's counterpart to the buyer's trust po
 
 ### 6.2 Pricing models
 
-Five pricing models are defined. A capability MUST declare exactly one primary model and MAY declare volume tiers. Prices are asks, not contracts: the binding price is fixed in the accepted offer. Sellers who mark pricing negotiable accept counter-offers during the hire handshake.
+Five pricing models are defined. A capability MUST declare exactly one primary model and MAY declare volume tiers. Prices are asks, not contracts: the binding price is fixed in the accepted offer. Sellers who mark pricing negotiable accept counter-offers during the hire handshake. The pricing model enum is open (section 18.2): a receiver encountering an unknown model MUST reject the offer with ARC-1004 rather than guess its semantics.
 
-| Model   | Meaning                                                                                                                                                                          | Typical use                                          |
-|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
-| per_task    | Flat price per delegated task.                                                                                                                                                       | Uniform tasks: one extraction, one translation.          |
-| per_unit    | Price per declared unit (1k_tokens, page, minute, item).                                                                                                                             | Variable-size tasks; the receipt records units consumed. |
-| tiered      | Unit or task price falls at committed volume thresholds.                                                                                                                             | Term engagements with volume commitments.                |
-| retainer    | Fixed periodic fee plus optional discounted per-task price.                                                                                                                          | Standing engagements with reserved capacity.             |
-| value_share | Small or zero base fee plus a percentage of buyer-attributed value under a signed value model (section 11.5). REQUIRES an audit clause and a computed value floor in the engagement. | Cold-start sellers; outcome-priced services.             |
+| Model | Meaning | Typical use |
+|---|---|---|
+| per_task | Flat price per delegated task. | Uniform tasks: one extraction, one translation. |
+| per_unit | Price per declared unit (1k_tokens, page, minute, item). | Variable-size tasks; the receipt records units consumed. |
+| tiered | Unit or task price falls at committed volume thresholds. | Term engagements with volume commitments. |
+| retainer | Fixed periodic fee plus optional discounted per-task price. | Standing engagements with reserved capacity. |
+| value_share | Small or zero base fee plus a percentage of buyer-attributed value under a signed value model (section 11.4). REQUIRES an audit clause and a computed value floor in the engagement. | Cold-start sellers; outcome-priced services. |
 
 ```jsonc
 "pricing": {
@@ -236,8 +253,8 @@ Five pricing models are defined. A capability MUST declare exactly one primary m
     { "min_volume": 10000, "unit_price": "0.006" },
     { "min_volume": 100000, "unit_price": "0.004" }
   ],
-"minimum": { "amount": "0.02", "currency": "USD" },
-"negotiable": true
+  "minimum": { "amount": "0.02", "currency": "USD" },
+  "negotiable": true
 }
 ```
 
@@ -248,17 +265,25 @@ Payment terms declare the rails the seller accepts, whether escrow is mandatory 
 ```jsonc
 "payment_terms": {
   "rails": ["ap2", "x402"],
-  "escrow": "required", // required for spot; balance|stream for term/standing
+  "escrow": "required",
   "settlement": "on_countersign",
   "silence_timeout": "PT72H",
-  "refunds": "tiered_slo", // payouts follow the offer payout table
-  "invoice_granularity": "per_task" // per_task | per_epoch
+  "refunds": "tiered_slo",
+  "invoice_granularity": "per_task"   // per_task | per_epoch
 }
 ```
 
 ### 6.4 Listing validation
 
 Before a card becomes discoverable the registry MUST verify: the card signature against the seller DID; the MCP endpoint challenge (section 5.3); that io_schema hashes resolve to retrievable schemas; that every capability maps to a valid taxonomy node (section 7.1), with the registry suggesting a mapping from the description where the seller omits one; that pricing amounts parse and tiers are monotonic; and, where a standardized probe exists for the taxonomy node, the capability probe (section 7.3). Cards failing validation are stored as DRAFT and are not served in discovery.
+
+### 6.5 Trial terms (freemium)
+
+A seller MAY opt any capability into trials by declaring a trial block on its card: a bounded period of free or discounted use through which a buyer evaluates the capability before committing paid volume. Trial terms declare a duration, task and/or unit caps, a discount percentage (100 = free), eligibility requirements evaluated against the buyer's conduct record, and a per_buyer rule. Trials are strictly opt-in: a card without a trial block never grants one, and the seller may withdraw the block in a card revision without affecting trials already running.
+
+A buyer avails a trial by setting trial: true on an offer against a trial-bearing capability. Acceptance creates a trial engagement bounded by the caps; it ends at whichever comes first of the duration or a cap, entering TRIAL_EXPIRED (section 13.2), from which conversion is an ordinary offer — the seller MAY attach a conversion quote to the expiry notification. Trial execution is identical to paid execution: tasks run over MCP, receipts are two-party-signed with the discounted amount (0 is a valid amount; a 100% discount requires no escrow lock, a partial discount locks the discounted amount), and ledger records are emitted with a trial marker so buyer finance sees trial usage as itemized shadow cost (section 10.3).
+
+**Anti-farming.** The registry enforces per_buyer: once as one trial per buyer ARC-AID per capability, ever — surviving card revisions and seller re-listings. Because an ARC-AID is costly to abandon (reputation restarts at the neutral prior; registries MAY require deposits, minimum account age, or minimum paid receipts for trial eligibility), re-registering to farm trials costs more than the trial yields. Trial requests failing eligibility or repetition checks are refused with ARC-8001; tasks beyond the caps are refused with ARC-8002 and the engagement expires. Trial transactions are reputation-bearing but distortion-proof under the rules of section 11.5.
 
 ## 7. Discovery
 
@@ -270,7 +295,7 @@ Free-text capability ids do not compose across sellers, so the registry maintain
 
 ### 7.2 Query modes: structured and intent
 
-The discovery query supports two modes, composable in one request. Structured mode is the arc/policy trust policy of section 7.4, filtering on taxonomy node, tags, and reputation predicates. Intent mode adds a natural-language need and OPTIONAL example input/output pairs; the registry embeds capability descriptions at listing time and resolves the intent by similarity search to candidate taxonomy nodes and cards. In intent mode the registry MUST check schema compatibility: a candidate whose input io_schema cannot validate the buyer's example input, or whose output schema does not satisfy the buyer's declared output expectations, is excluded regardless of semantic similarity. Schema compatibility is the machine-checkable half of functionality matching; embedding similarity alone MUST NOT qualify a candidate.
+The discovery query supports two modes, composable in one request. Structured mode is the arc/policy trust policy of section 7.5, filtering on taxonomy node, tags, and reputation predicates. Intent mode adds a natural-language need and OPTIONAL example input/output pairs; the registry embeds capability descriptions at listing time and resolves the intent by similarity search to candidate taxonomy nodes and cards. In intent mode the registry MUST check schema compatibility: a candidate whose input io_schema cannot validate the buyer's example input, or whose output schema does not satisfy the buyer's declared output expectations, is excluded regardless of semantic similarity. Schema compatibility is the machine-checkable half of functionality matching; embedding similarity alone MUST NOT qualify a candidate.
 
 ```jsonc
 {
@@ -278,23 +303,71 @@ The discovery query supports two modes, composable in one request. Structured mo
   "body": {
     "intent": {
       "need": "extract line items from supplier invoice PDFs to JSON",
-      "example_input_hash": "sha256:...", // OPTIONAL sample document
-      "expected_output_schema": "sha256:..." // OPTIONAL
+      "example_input_hash": "sha256:...",      // OPTIONAL
+      "expected_output_schema": "sha256:..."   // OPTIONAL
     },
-"taxonomy_node": "arc.document.extraction.*", // OPTIONAL, narrows intent
-"filters": [ ... ], // reputation predicates, section 7.4
-"require_probe_verified": true // default true
-}
+    "taxonomy_node": "arc.document.extraction.*",
+    "filters": [ ... ],                        // section 7.5
+    "require_probe_verified": true             // default true
+  }
 }
 ```
 
 ### 7.3 Capability verification
 
-Discovery distinguishes claimed functionality from demonstrated functionality. Three mechanisms establish the latter. First, capability probes: for taxonomy nodes with a standardized probe suite, the registry runs a challenge task against the declared capability at listing time and on every card version, marking the capability probe_verified with a timestamp; probes MUST be re-run at least every P7D and on model_version changes, and discovery serves only probe-verified capabilities by default (require_probe_verified MAY be set false to include unverified ones, e.g. for exploration). Second, receipt evidence: every snapshot entry carries the capability's receipt count and score history against its io_schema — completed, paid, rated transactions are the strongest functionality proof available. Third, direct introspection: sellers MUST keep MCP tools/list accurate for listed capabilities, so a buyer can retrieve live function signatures before offering. For residual uncertainty, the exploration mechanism (section 8 of the solution document) doubles as a functionality test: a low-stakes spot task with a strict rubric confirms empirically what the card claims.
+Discovery distinguishes claimed functionality from demonstrated functionality. Three mechanisms establish the latter. First, capability probes: for taxonomy nodes with a standardized probe suite, the registry runs a challenge task against the declared capability at listing time and on every card version, marking the capability probe_verified with a timestamp; probes MUST be re-run at least every P7D and on model_version changes, and discovery serves only probe-verified capabilities by default (require_probe_verified MAY be set false to include unverified ones, e.g. for exploration). Second, receipt evidence: every snapshot entry carries the capability's receipt count and score history against its io_schema — completed, paid, rated transactions are the strongest functionality proof available. Third, direct introspection: sellers MUST keep MCP tools/list accurate for listed capabilities, so a buyer can retrieve live function signatures before offering. For residual uncertainty, the exploration mechanism doubles as a functionality test: a low-stakes spot task with a strict rubric confirms empirically what the card claims.
 
-### 7.4 Trust policy and snapshot
+### 7.4 Test reports: pass, fail, conditional pass
+
+Every formal evaluation of a listed agent — a listing probe, a scheduled re-probe, a dispute re-execution, a certification run, or structured feedback from a trial buyer — is expressed as an arc/test_report: a signed, tri-state verdict with machine-actionable corrections. The verdict enum is closed: pass, fail, or conditional_pass. What makes the object autonomous-agent-grade is the corrections array: each entry names the criterion, the observed and expected behavior, a severity (blocking or advisory), and a retest deadline, so the subject agent can remediate and re-submit with no human reading prose feedback.
+
+```jsonc
+{
+  "type": "arc/test_report",
+  "body": {
+    "subject_aid": "arc:mkt.example:7K3M...",
+    "capability": "invoice-data-extraction",
+    "suite_ref": "sha256:...",          // standardized per taxonomy node
+    "context": "probe",                 // probe | trial | dispute | certification
+    "cases": [
+      { "case_id": "inv-017", "verdict": "fail", "detail": "date not ISO 8601" }
+    ],
+    "verdict": "conditional_pass",
+    "corrections": [
+      {
+        "criterion": "dates_iso",
+        "severity": "blocking",
+        "observed": "12/03/2026",
+        "expected": "2026-03-12",
+        "description": "Normalize all dates to ISO 8601.",
+        "retest_by": "2026-11-05T00:00:00Z"
+      }
+    ],
+    "retest": { "scope": "failed_cases", "limit_remaining": 2 },
+    "issuer_aid": "arc:mkt.example:PRB1..."   // probe runner, verifier, or trial buyer
+  }
+}
+```
+
+**Effects by verdict.** Pass sets the capability's probe status to verified. Fail sets it to failed: the capability returns to DRAFT and leaves discovery. Conditional_pass lists the capability with status conditional: it is excluded from default discovery (require_probe_verified admits verified only; a policy MAY set include_conditional: true to see it, e.g. for exploration), its blocking corrections are visible on the card, and if any blocking correction's retest_by passes without a passing retest, the status drops to failed automatically. Remediation is autonomous: the seller fixes and calls the retest endpoint (section 14), scoped to failed cases; retests are rate-limited (default 3 per P7D per capability, ARC-8003 beyond) so the probe suite cannot be brute-forced. Test reports from trial buyers carry context: trial and affect no probe status — they are structured feedback that commonly precedes conversion ("fix these and we commit volume") — while dispute-context reports feed the verdict of section 12. Test reports never feed scores directly; attestations remain the only scoring input.
+
+### 7.5 Trust policy and snapshot
 
 The reputation half of discovery is the arc/policy trust policy answered with an arc/snapshot: ranked candidates with score breakdowns, sample counts, confidence, probe-verification status, an as-of timestamp, and the registry's signature over the whole response. The snapshot hash MUST be embedded in any offer that results from it, making the buyer's decision auditable and the registry accountable. Trust policies support dimension filters (min/max with recency windows and minimum sample counts), a minimum rater-reputation threshold, per-buyer ranking weights, price ceilings, and an exploration clause routing a bounded percentage of low-stakes tasks to unproven sellers.
+
+```jsonc
+{
+  "taxonomy_node": "arc.document.extraction.invoice",
+  "filters": [
+    { "dimension": "accuracy", "min": 0.97, "window_days": 30, "min_samples": 200 },
+    { "dimension": "speed_p95_ms", "max": 3000 },
+    { "dimension": "quality", "min": 0.85, "rater_rep_min": 0.6 }
+  ],
+  "rank_by": { "accuracy": 0.6, "speed": 0.2, "price": 0.2 },
+  "max_price": { "amount": "0.05", "currency": "USD" },
+  "exploration": { "enabled": true, "budget_pct": 5 }
+}
+```
 
 ## 8. Hire: negotiation, offers, SLOs, engagements
 
@@ -311,7 +384,7 @@ Where pricing is negotiable or the buyer wants competitive bids, hiring begins w
     "card_ref": "sha256:...",
     "price": { "model": "per_task", "amount": "0.035", "currency": "USD" },
     "slo": { "max_latency_ms": 2500 },
-    "valid_until": "2026-08-25T11:00:00Z",
+    "valid_until": "2026-10-29T11:00:00Z",
     "negotiable_dimensions": ["price", "max_latency_ms", "volume_tiers"]
   }
 }
@@ -323,13 +396,34 @@ Negotiation proceeds as a chain of arc/offer envelopes, each referencing its pre
 
 ### 8.3 Offers, SLOs, and engagements
 
-A hire concludes with the four-message core handshake: offer (or accepted quote), acceptance, escrow lock, and delegation. The arc/offer body contains the task specification and hash, the card hash and snapshot hash relied upon, the buyer snapshot hash the seller relied upon (section 11.3), the engagement object, the SLO block, the grading rubric, and the payout table. The seller's arc/acceptance signs the offer hash, making every term bilateral.
+A hire concludes with the four-message core handshake: offer (or accepted quote), acceptance, escrow lock, and delegation. The arc/offer body contains the task specification and hash, the card hash and snapshot hash relied upon, the buyer snapshot hash the seller relied upon (section 11.3), the engagement object, the SLO block, the grading rubric, the payout table, and the buyer's allocation tags (section 10.2). The seller's arc/acceptance signs the offer hash, making every term bilateral.
 
 Engagement objects declare type spot, term, or standing. Term engagements add a bound (task volume or duration), a rolling SLO window, and an early-exit clause on rolling-window breach with pro-rated refund. Standing engagements add epochs, committed volume with tiered pricing, a renewal gate that re-evaluates the buyer's referenced trust policy each epoch (including trend clauses such as maximum consecutive declining epochs), notice periods, and termination clauses. All three engagement types produce identical receipts and attestations: longevity changes payment and evaluation cadence, never the trust primitives.
 
+**Version pinning.** An engagement is pinned to the protocol version its acceptance was signed under, for its entire life: every receipt, attestation, and settlement event within it is produced and evaluated under that version's rules, regardless of registry upgrades in the meantime. A spot engagement migrates trivially (its life is one task); a term or standing engagement migrates only at a renewal gate or an explicit re-signing by both parties, making version migration a bilateral, auditable event rather than something that happens to a contract in flight (section 18.3).
+
+```jsonc
+"engagement": {
+  "type": "standing",                  // spot | term | standing
+  "epoch": "P1M",
+  "committed_volume": { "min_tasks": 10000, "unit_price": "0.03" },
+  "renewal_gate": {
+    "policy_ref": "sha256:...",
+    "trend": { "dimension": "accuracy", "max_decline_epochs": 2 }
+  },
+  "termination": { "notice": "P7D", "breach_exit": "rolling_slo_violation" },
+  "value_share_terms": {               // REQUIRED when pricing is value_share
+    "audit": { "cadence": "P30D", "sample_pct": 5 },
+    "floor": "receipts_x_unit_value"
+  }
+}
+```
+
 ## 9. Execution and receipts
 
-Execution runs over MCP between buyer and seller (or seller-internal tools). On delivery the seller signs an arc/receipt binding the task hash, both DIDs, the engagement reference, the snapshot hash, delegated and delivered timestamps, units consumed (for per_unit pricing), and the payment reference. The buyer countersigns at settlement; the countersignature simultaneously completes the receipt and triggers payout. A receipt is valid only when both signatures verify. Receipts are append-only at the registry and retrievable by hash by either party and, in aggregate form, by the scoring engine.
+Execution runs over MCP between buyer and seller (or seller-internal tools). On delivery the seller signs an arc/receipt binding the task hash, both AIDs, the engagement reference, the snapshot hash, delegated and delivered timestamps, units consumed (for per_unit pricing), the inherited allocation tags, and the payment reference. The buyer countersigns at settlement; the countersignature simultaneously completes the receipt and triggers payout. A receipt is valid only when both signatures verify. Receipts are append-only at the registry and retrievable by hash by either party and, in aggregate form, by the scoring engine.
+
+**Verification continuity.** Receipts are forever-objects: a receipt MUST remain verifiable for the life of the registry and beyond it. A validator verifies any object under the rules of the protocol version its envelope declares, which is why canonicalization, hashing, and signature algorithms can never change inside a major version (section 18.2), and why every published schema version remains retrievable at its immutable versioned URL (section 18.1).
 
 ## 10. Settlement, payouts, and spend observability
 
@@ -343,7 +437,7 @@ Every payment in ARC already resolves to a signed receipt — spend is itemized 
 
 ### 10.3 Ledger states and export
 
-For accounting purposes every monetary event on a receipt is classified into one of five states: committed (escrow locked, not yet settled), settled (countersigned, payout executed), held (dispute pending), refunded (tiered payout discount, early-exit refund, or verdict-ordered back-payment), and auto_settled (silence-timeout release). Registries MUST serve GET /v1/ledger as an incremental, buyer-scoped stream of ledger records (schema: ledger_record, defined in the Schema Bundle) — one record per state transition per receipt, carrying the amount, payout tier, counterparty AID, capability, taxonomy node, engagement reference, allocation tags, and event time — ordered by event time and filterable by state, allocation field, and period. This is the reconciliation feed for ERP import; under ARC-Port, Merkle inclusion proofs make the exported ledger tamper-evident.
+For accounting purposes every monetary event on a receipt is classified into one of five states: committed (escrow locked, not yet settled), settled (countersigned, payout executed), held (dispute pending), refunded (tiered payout discount, early-exit refund, or verdict-ordered back-payment), and auto_settled (silence-timeout release). Registries MUST serve GET /v1/ledger as an incremental, buyer-scoped stream of ledger records ([`ledger_record`](schemas/0.7/ledger_record.json)) — one record per state transition per receipt, carrying the amount, payout tier, counterparty AID, capability, taxonomy node, engagement reference, allocation tags, and event time — ordered by event time and filterable by state, allocation field, and period. This is the reconciliation feed for ERP import; under ARC-Port, Merkle inclusion proofs make the exported ledger tamper-evident. Records for trial tasks (section 6.5) carry a trial marker and their discounted (possibly zero) amounts, so trial usage appears as itemized shadow cost without polluting paid-spend totals.
 
 ### 10.4 Preventive controls and variance
 
@@ -355,24 +449,25 @@ Spend control in ARC is preventive rather than detective: the spend_policy regis
 
 Attestations are the only inputs to reputation. A quality attestation MUST reference the receipt hash and the rubric hash agreed in the offer, carry per-criterion scores and a composite, and be signed by the buyer AID on the receipt. It MUST arrive within the quality window (default PT72H from countersignature). An accuracy attestation MAY arrive later (default window P14D) and MUST carry evidence: a test-result hash, a downstream receipt reference, or a verifier verdict; evidence-backed attestations receive materially higher weight. Speed is never attested; it is computed from receipt timestamps.
 
-### 11.2 Seller rates buyer
-
-Reputation in ARC is symmetric: the seller on a receipt MAY submit a conduct attestation on the buyer within the same PT72H window, and the registry additionally computes objective buyer-conduct metrics from receipts and dispute records with no attestation required. The attested dimensions are specification quality (was the task spec and rubric clear, complete, and consistent with the inputs actually delegated), cooperation (responsiveness to clarification requests during execution), and dispute fairness. The computed dimensions are countersign latency (time from delivery to countersignature), silence rate (fraction of deliveries resolved by silence-timeout auto-settlement), dispute loss rate (disputes opened by or against the buyer that resolved against it), and rating anomaly score (divergence of the buyer's grades from other raters of the same sellers). Computed dimensions carry the majority of buyer-score weight precisely because they cannot be gamed by either party's opinion.
-
 ```jsonc
 {
   "type": "arc/attestation",
   "body": {
-    "direction": "seller_on_buyer",
+    "direction": "buyer_on_seller",
+    "kind": "quality",
     "receipt_hash": "sha256:...",
-    "subject_aid": "arc:mkt.example:BQ7T...", // the buyer
-    "scores": { "spec_quality": 0.9, "cooperation": 1.0, "dispute_fairness": 1.0 },
-    "rater_aid": "arc:mkt.example:7K3M...",
-    "timestamp": "2026-08-25T10:45:00Z",
-    "signature": "..."
+    "rubric_hash": "sha256:...",
+    "scores": { "schema_valid": 1.0, "completeness": 0.85, "instruction_adherence": 1.0 },
+    "composite": 0.94,
+    "subject_aid": "arc:mkt.example:7K3M...",
+    "rater_aid": "arc:mkt.example:BQ7T..."
   }
 }
 ```
+
+### 11.2 Seller rates buyer
+
+Reputation in ARC is symmetric: the seller on a receipt MAY submit a conduct attestation on the buyer within the same PT72H window, and the registry additionally computes objective buyer-conduct metrics from receipts and dispute records with no attestation required. The attested dimensions are specification quality (was the task spec and rubric clear, complete, and consistent with the inputs actually delegated), cooperation (responsiveness to clarification requests during execution), and dispute fairness. The computed dimensions are countersign latency (time from delivery to countersignature), silence rate (fraction of deliveries resolved by silence-timeout auto-settlement), dispute loss rate (disputes opened by or against the buyer that resolved against it), and rating anomaly score (divergence of the buyer's grades from other raters of the same sellers). Computed dimensions carry the majority of buyer-score weight precisely because they cannot be gamed by either party's opinion.
 
 ### 11.3 How buyer reputation exerts control
 
@@ -391,9 +486,8 @@ ARC extends outcome measurement from task correctness to business value, giving 
     "attribution": "last_touch",
     "value": { "amount": "612.00", "currency": "USD" },
     "evidence": { "kind": "downstream_receipt", "ref": "sha256:..." },
-    "disclosure": "aggregate", // private | aggregate | public
-    "buyer_aid": "arc:mkt.example:BQ7T...",
-    "signature": "..."
+    "disclosure": "aggregate",          // private | aggregate | public
+    "buyer_aid": "arc:mkt.example:BQ7T..."
   }
 }
 ```
@@ -406,6 +500,10 @@ ROAI is computed by the registry as attributed value divided by spend, per selle
 
 Both directions share one rulebook. The registry enforces one attestation per receipt per direction per dimension, validates the rater identity against the corresponding party on the receipt, applies weighting (rater's same-side reputation × log transaction value × recency × geometric pair dampening), runs anomaly detection on rater behavior in both directions, aggregates with Bayesian shrinkage toward a neutral prior, and decays scores over time. Buyer-side and seller-side reputations of one agent are tracked and served separately under its ARC-AID. Materially negative attestations in either direction enter a contest window (default PT48H) with notification to the subject before finalizing; a vindicated subject costs the rater same-side rater reputation. Mutual non-attestation is the default outcome and is not penalized — computed metrics still accrue.
 
+**Trial transactions.** Trial receipts (section 6.5) are reputation-bearing but distortion-proof: computed speed counts normally; attestations on trial receipts are admissible but weighted as if the transaction value equaled the capability's minimum paid price (the log-value term never sees zero), and trial-sourced attestations contribute at most 20% of any score's effective sample weight, so free volume can neither dominate a reputation nor be farmed into one. Trial receipts and their outcomes are excluded from ROAI computation and from public ROAI bands entirely — zero spend would make the ratio meaningless — and trial outcome attestations are accepted at disclosure tier private only.
+
+**Reputation continuity.** Reputation is version-agnostic: receipts and attestations from any past protocol version count toward current scores, the scoring engine normalizes across body versions, and an ARC-AID's history is never reset or discounted by a protocol upgrade (section 18.5). A version migration that orphaned track records would destroy the marketplace's core asset; this rule makes that structurally impossible.
+
 ## 12. Disputes
 
 An arc/dispute may be opened by a seller against a withheld countersignature or a contested attestation, or by a buyer against an accuracy-miss payout claim. The registry selects a verifier agent satisfying mutual-exclusion rules (no shared operator, no transaction history with either party within P30D, verifier conformance level). The verifier re-executes the task against the original task hash and issues a signed arc/verdict. Escrow and score effects follow the verdict; the losing party absorbs a reputation penalty — including the buyer's rater reputation where a rating is voided. Value-share audit disputes follow the same path: the verifier samples outcome evidence against the value model and the computed floor. Verifiers are themselves rated on verdict overturn rates. Every dispute state carries a timeout (section 13); expiry resolves in favor of the non-defaulting party.
@@ -414,99 +512,160 @@ An arc/dispute may be opened by a seller against a withheld countersignature or 
 
 ### 13.1 Task lifecycle
 
-| State    | Entered by          | Exits to                             | Timeout (default)          |
-|--------------|-------------------------|------------------------------------------|--------------------------------|
-| RFQ_OPEN     | Buyer sends arc/rfq     | QUOTED, EXPIRED                          | RFQ response deadline          |
-| QUOTED       | Seller sends arc/quote  | OFFERED (acceptance), COUNTERED, EXPIRED | quote valid_until              |
-| COUNTERED    | Either party counters   | OFFERED, COUNTERED, ABANDONED            | PT15M per round, 6-message cap |
-| OFFERED      | Buyer sends arc/offer   | ACCEPTED, COUNTERED, EXPIRED             | PT1H                           |
-| ACCEPTED     | Seller signs acceptance | ESCROWED, ABANDONED                      | PT1H                           |
-| ESCROWED     | Escrow lock confirmed   | EXECUTING                                | PT15M                          |
-| EXECUTING    | A2A delegation          | DELIVERED, FAILED                        | per SLO max_latency × 3        |
-| DELIVERED    | Seller-signed receipt   | SETTLED, DISPUTED, AUTO_SETTLED          | seller silence_timeout         |
-| SETTLED      | Buyer countersignature  | terminal (ratable)                       | —                              |
-| DISPUTED     | arc/dispute opened      | RESOLVED                                 | PT7D verification deadline     |
-| AUTO_SETTLED | Silence timeout expiry  | terminal (ratable)                       | —                              |
+| State | Entered by | Exits to | Timeout (default) |
+|---|---|---|---|
+| RFQ_OPEN | Buyer sends arc/rfq | QUOTED, EXPIRED | RFQ response deadline |
+| QUOTED | Seller sends arc/quote | OFFERED (acceptance), COUNTERED, EXPIRED | quote valid_until |
+| COUNTERED | Either party counters | OFFERED, COUNTERED, ABANDONED | PT15M per round, 6-message cap |
+| OFFERED | Buyer sends arc/offer | ACCEPTED, COUNTERED, EXPIRED | PT1H |
+| ACCEPTED | Seller signs acceptance | ESCROWED, ABANDONED | PT1H |
+| ESCROWED | Escrow lock confirmed | EXECUTING | PT15M |
+| EXECUTING | A2A delegation | DELIVERED, FAILED | per SLO max_latency × 3 |
+| DELIVERED | Seller-signed receipt | SETTLED, DISPUTED, AUTO_SETTLED | seller silence_timeout |
+| SETTLED | Buyer countersignature | terminal (ratable) | — |
+| DISPUTED | arc/dispute opened | RESOLVED | PT7D verification deadline |
+| AUTO_SETTLED | Silence timeout expiry | terminal (ratable) | — |
 
 ### 13.2 Registration and listing states
 
-Registrations: PENDING → ACTIVE → (SUSPENDED ↔ ACTIVE) → RETIRED. Cards: DRAFT → LISTED → SUPERSEDED (on new version) or DELISTED. Engagements: PROPOSED → ACTIVE → (RENEWED per epoch) → COMPLETED, TERMINATED, or BREACHED. All transitions are effected by signed envelopes or documented timeout expiries; no transition requires human action.
+Registrations: PENDING → ACTIVE → (SUSPENDED ↔ ACTIVE) → RETIRED. Cards: DRAFT → LISTED → SUPERSEDED (on new version) or DELISTED. Capability probe status: unverified → verified | conditional | failed, with conditional → verified on a passing retest and conditional → failed on a lapsed retest_by (section 7.4). Engagements: PROPOSED → ACTIVE → (RENEWED per epoch) → COMPLETED, TERMINATED, or BREACHED; trial engagements run TRIAL_ACTIVE → CONVERTED (a paid offer accepted) or TRIAL_EXPIRED (duration or cap reached). All transitions are effected by signed envelopes or documented timeout expiries; no transition requires human action.
 
 ## 14. Registry API surface
 
-The registry exposes a versioned HTTPS JSON API. All mutating calls carry ARC envelopes; all responses carrying scores or listings are registry-signed. Idempotency is by envelope id.
+The registry exposes a versioned HTTPS JSON API. All mutating calls carry ARC envelopes; all responses carrying scores or listings are registry-signed. Idempotency is by envelope id. The /v1 path versions the HTTP surface independently of the protocol version: one API major MAY serve several protocol versions side by side (section 18.1).
 
-| Endpoint            | Method | Purpose                                                                        |
-|-------------------------|------------|------------------------------------------------------------------------------------|
-| /v1/agents/challenge    | POST       | Obtain a registration or key-proof nonce.                                          |
-| /v1/agents/register     | POST       | Register or update roles (arc/registration).                                       |
-| /v1/agents/{did}        | GET        | Fetch public record, roles, status.                                                |
-| /v1/cards               | POST       | Submit or version an arc/card listing.                                             |
-| /v1/cards/{hash}        | GET        | Fetch a card by hash.                                                              |
-| /v1/capabilities        | GET        | Browse the capability taxonomy with listing and receipt counts.                    |
-| /v1/capabilities/{node} | GET        | Cards listed under a taxonomy node.                                                |
-| /v1/discovery/query     | POST       | Trust-policy and/or intent query; returns signed arc/snapshot.                     |
-| /v1/rfqs                | POST       | Open an RFQ; registry fans out to eligible sellers only.                           |
-| /v1/rfqs/{id}/quotes    | GET        | Collected quotes for an RFQ (requester only).                                      |
-| /v1/scores/{aid}        | GET        | Per-capability seller scores and buyer conduct scores, served separately (signed). |
-| /v1/engagements         | POST       | File a countersigned engagement.                                                   |
-| /v1/receipts            | POST       | File a receipt or countersignature.                                                |
-| /v1/receipts/{hash}     | GET        | Fetch a receipt by hash (parties and auditors).                                    |
-| /v1/attestations        | POST       | Submit an attestation (validated per section 11).                                  |
-| /v1/value-models        | POST       | Register a signed value model; GET /v1/value-models/{hash} to resolve.             |
-| /v1/outcomes            | POST       | Submit an outcome attestation for value attribution.                               |
-| /v1/roai/{aid}          | GET        | ROAI aggregates and bands for an agent (disclosure-respecting, signed).            |
-| /v1/ledger              | GET        | Incremental buyer-scoped ledger records for ERP reconciliation (section 10.3).     |
-| /v1/disputes            | POST       | Open a dispute; GET /v1/disputes/{id} for status.                                  |
-| /v1/anchors/latest      | GET        | Latest Merkle root and inclusion proofs (Portability level).                       |
+| Endpoint | Method | Purpose |
+|---|---|---|
+| /.well-known/arc | GET | Registry configuration: protocol versions supported, conformance levels, deprecations and sunset dates (section 18.3). |
+| /v1/agents/challenge | POST | Obtain a registration or key-proof nonce. |
+| /v1/agents/register | POST | Register or update roles (arc/registration). |
+| /v1/agents/{aid} | GET | Fetch public record, roles, status (also resolvable by DID). |
+| /v1/cards | POST | Submit or version an arc/card listing. |
+| /v1/cards/{hash} | GET | Fetch a card by hash. |
+| /v1/capabilities | GET | Browse the capability taxonomy with listing and receipt counts. |
+| /v1/capabilities/{node} | GET | Cards listed under a taxonomy node. |
+| /v1/discovery/query | POST | Trust-policy and/or intent query; returns signed arc/snapshot. |
+| /v1/rfqs | POST | Open an RFQ; registry fans out to eligible sellers only. |
+| /v1/rfqs/{id}/quotes | GET | Collected quotes for an RFQ (requester only). |
+| /v1/scores/{aid} | GET | Per-capability seller scores and buyer conduct scores, served separately (signed). |
+| /v1/engagements | POST | File a countersigned engagement. |
+| /v1/receipts | POST | File a receipt or countersignature. |
+| /v1/receipts/{hash} | GET | Fetch a receipt by hash (parties and auditors). |
+| /v1/attestations | POST | Submit an attestation (validated per section 11). |
+| /v1/value-models | POST | Register a signed value model; GET /v1/value-models/{hash} to resolve. |
+| /v1/outcomes | POST | Submit an outcome attestation for value attribution. |
+| /v1/roai/{aid} | GET | ROAI aggregates and bands for an agent (disclosure-respecting, signed). |
+| /v1/ledger | GET | Incremental buyer-scoped ledger records for ERP reconciliation (section 10.3). |
+| /v1/trials | GET | The calling buyer's trial usage and remaining eligibility per capability. |
+| /v1/test-reports | POST | File a signed arc/test_report (probe runner, verifier, or trial buyer); GET /v1/test-reports/{id} to fetch. |
+| /v1/cards/{hash}/retest | POST | Seller-initiated retest after corrections; scoped to failed cases, rate-limited. |
+| /v1/disputes | POST | Open a dispute; GET /v1/disputes/{id} for status. |
+| /v1/anchors/latest | GET | Latest Merkle root and inclusion proofs (Portability level). |
 
 ## 15. Error codes
 
-| Code | Meaning                                                                |
-|----------|----------------------------------------------------------------------------|
-| ARC-1001 | Signature invalid or key not resolvable from DID.                          |
-| ARC-1002 | Unknown or inactive DID / role not held.                                   |
-| ARC-1003 | Nonce missing, expired, or reused.                                         |
-| ARC-2001 | Trust policy matched no candidates (includes nearest-miss hints).          |
-| ARC-2002 | Snapshot expired; re-query before offering.                                |
-| ARC-2003 | Buyer does not satisfy the seller's buyer_requirements.                    |
-| ARC-2004 | io_schema incompatible with the buyer's example input or expected output.  |
-| ARC-2005 | Capability not probe-verified and require_probe_verified is set.           |
-| ARC-3001 | Escrow lock exceeds registered spend policy.                               |
-| ARC-3002 | Payment mandate invalid or rail unavailable.                               |
-| ARC-4001 | Receipt fields inconsistent with offer or engagement.                      |
-| ARC-4002 | Attestation window expired.                                                |
-| ARC-4003 | Duplicate attestation for receipt and dimension.                           |
-| ARC-4004 | Rater identity does not match receipt buyer.                               |
-| ARC-5001 | Dispute ineligible or window expired.                                      |
-| ARC-5002 | No conformant verifier available; dispute queued.                          |
-| ARC-6001 | Negotiation message cap reached; chain abandoned.                          |
-| ARC-6002 | Quote expired or non-monotonic counter rejected.                           |
-| ARC-7001 | Value model unknown, unsigned, or inconsistent units.                      |
-| ARC-7002 | Outcome evidence missing or insufficient for the claimed value.            |
+| Code | Meaning |
+|---|---|
+| ARC-1001 | Signature invalid or key not resolvable from DID. |
+| ARC-1002 | Unknown or inactive DID / role not held. |
+| ARC-1003 | Nonce missing, expired, or reused. |
+| ARC-1004 | Unknown value in an open enum with no defined fallback (e.g. pricing model); the offer or object is rejected cleanly. |
+| ARC-1005 | Protocol version unsupported or past its sunset; the response lists versions_supported from /.well-known/arc. |
+| ARC-2001 | Trust policy matched no candidates (includes nearest-miss hints). |
+| ARC-2002 | Snapshot expired; re-query before offering. |
+| ARC-2003 | Buyer does not satisfy the seller's buyer_requirements. |
+| ARC-2004 | io_schema incompatible with the buyer's example input or expected output. |
+| ARC-2005 | Capability not probe-verified and require_probe_verified is set. |
+| ARC-3001 | Escrow lock exceeds registered spend policy. |
+| ARC-3002 | Payment mandate invalid or rail unavailable. |
+| ARC-4001 | Receipt fields inconsistent with offer or engagement. |
+| ARC-4002 | Attestation window expired. |
+| ARC-4003 | Duplicate attestation for receipt and dimension. |
+| ARC-4004 | Rater identity does not match receipt buyer. |
+| ARC-5001 | Dispute ineligible or window expired. |
+| ARC-5002 | No conformant verifier available; dispute queued. |
+| ARC-6001 | Negotiation message cap reached; chain abandoned. |
+| ARC-6002 | Quote expired or non-monotonic counter rejected. |
+| ARC-7001 | Value model unknown, unsigned, or inconsistent units. |
+| ARC-7002 | Outcome evidence missing or insufficient for the claimed value. |
 | ARC-7003 | Reported value below the computed value floor of a value_share engagement. |
+| ARC-8001 | Trial ineligible: already availed for this capability, or eligibility requirements unmet. |
+| ARC-8002 | Trial cap reached; the trial engagement has expired. Convert with a paid offer. |
+| ARC-8003 | Retest limit or correction window exceeded for this capability. |
 
 ## 16. Conformance levels
 
-| Level      | Requires                                                                                                              | Grants                                                                                                               |
-|----------------|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| ARC-Core       | Envelope + signing, DID identity, registration, cards, receipts.                                                          | Listable and hireable with computed speed scores.                                                                        |
-| ARC-Commerce   | Core + escrow integration, payout tables, engagement objects, RFQ/quote negotiation, timeouts.                            | Full autonomous settlement and negotiation including term and standing engagements.                                      |
+| Level | Requires | Grants |
+|---|---|---|
+| ARC-Core | Envelope + signing, DID identity, registration, cards, receipts. | Listable and hireable with computed speed scores. |
+| ARC-Commerce | Core + escrow integration, payout tables, engagement objects, RFQ/quote negotiation, timeouts. | Full autonomous settlement and negotiation including term and standing engagements. |
 | ARC-Reputation | Commerce + bilateral attestations, buyer_requirements enforcement, rubric grading, contest window, dispute participation. | Rating-based purchasing in both directions; value attribution, ROAI, and value_share pricing; eligibility as a verifier. |
-| ARC-Port       | Reputation + Merkle inclusion proofs, ERC-8004-compatible identity.                                                       | Portable, tamper-evident reputation across registries.                                                                   |
+| ARC-Port | Reputation + Merkle inclusion proofs, ERC-8004-compatible identity. | Portable, tamper-evident reputation across registries. |
 
-Registries MUST advertise the levels they support in their well-known configuration (GET /.well-known/arc). Agents SHOULD declare their level at registration; offers between agents at different levels degrade to the lower level's guarantees.
+Registries MUST advertise the levels they support in their well-known configuration (GET /.well-known/arc). Agents SHOULD declare their level at registration; offers between agents at different levels degrade to the lower level's guarantees. The same degradation rule governs protocol versions (section 18.3).
 
 ## 17. Security considerations
 
 Replay is prevented by single-use nonces, envelope ids, and expiry fields. Sybil pressure is countered economically (deposits, transaction-bound ratings, pair dampening) rather than by identity verification alone. Registries are honest-but-accountable: signed snapshots make served scores non-repudiable, and Merkle anchoring (ARC-Port) makes retroactive tampering detectable by any party. Spend policies are enforced server-side so a compromised buyer agent cannot exceed its operator's limits. Rubric hashes prevent post-hoc grading criteria changes; snapshot hashes — in both directions — prevent post-hoc claims about what either party relied on. The monotonic-concession and message-cap rules prevent negotiation livelock and quote-fishing denial-of-service; per-buyer RFQ rate limits bound fan-out abuse. Bilateral rating introduces retaliation risk — a seller punishing an honest bad grade with a bad conduct score — which is mitigated by weighting buyer scores predominantly toward computed metrics no attestation can touch, by pair dampening applying in both directions, and by the symmetric contest window. Callback URLs MUST be HTTPS and SHOULD be verified by challenge at registration. Verifier selection rules prevent adjudication by affiliated parties. Nothing in ARC requires an agent to disclose model internals, prompts, or training data; only conduct is measured.
 
-## 18. Versioning and extensibility
+Trial farming is countered structurally: one trial per ARC-AID per capability ever, eligibility gates on conduct records, optional deposits and account-age floors, and the section 11.5 weighting rules that make free volume worthless for reputation pumping. Probe brute-forcing is countered by retest rate limits and per-suite case rotation. Version negotiation is itself an attack surface: a registry or counterparty MUST NOT be able to force a downgrade below the minimum version an agent declared at registration, and verifiers re-running disputed tasks evaluate under the engagement's pinned version, never the current one.
 
-The arc field carries major.minor. Minor versions only add optional fields; implementations MUST ignore unknown fields and MUST NOT reject envelopes for their presence. Major versions may break compatibility and MUST be negotiated via the registry's well-known configuration. Extensions live under an x\_ prefix in any body and are excluded from conformance testing but included in signatures. New pricing models, dimensions, and engagement types are added by minor revision through the specification's change process, with a public comment period once the specification is opened (roadmap phase three).
+## 18. Versioning and backward compatibility
+
+ARC's objects are forever-objects: a receipt signed today must still verify, and still count toward reputation, years and versions from now. The versioning design follows from that constraint. In one line: version the envelope, freeze the cryptography, pin the engagements, never orphan a receipt.
+
+### 18.1 Version carriers
+
+Version numbers live at four layers, versioned independently. Conflating them is the classic protocol mistake; ARC keeps them separate:
+
+| Layer | Carrier | Rules |
+|---|---|---|
+| Wire protocol | The arc field on every envelope: "major.minor". | No patch number on the wire. Patch releases (e.g. arc/0.7.1) are specification errata that change no wire behavior and exist only on the document. |
+| Schema bundle | Each schema's $id embeds the version (…/schemas/0.7/receipt.json). | Versioned schema URLs are immutable forever. Old objects validate against the schemas they were born under. |
+| Registry API | The URL path (/v1). | Deliberately decoupled from the protocol version: one API major MAY serve several protocol versions side by side. The path bumps only when the HTTP surface itself breaks. |
+| Taxonomy | The versioned capability tree (section 7.1). | Nodes are added by minor revision and never removed; deprecated nodes remain resolvable and alias to successors. |
+
+A seller's model_version on its card is a fifth axis, but it versions the agent, not the protocol: it triggers re-probes and recency resets and nothing else.
+
+### 18.2 The compatibility contract
+
+A minor release MAY: add OPTIONAL body fields; add new endpoints; add new object types (a receiver encountering an unknown type returns a clean ARC error, never a crash); and add values to enums the specification marks open. A minor release MUST NOT: remove or rename a field; change a field's type, semantics, or default; make an optional field required; or alter canonicalization, hashing, or signature rules — any change to the cryptographic envelope is automatically a major version, because receipts must verify forever.
+
+Receivers MUST ignore unknown body fields rather than reject them. Signatures remain valid across minor versions because the JWS is computed over the body as sent, unknown fields included. Receivers MUST reject only unknown major versions (ARC-1005).
+
+**Open enums and fallbacks.** Each enum the specification marks open declares a receiver fallback, because without one, additive changes still break old receivers in practice. The normative fallbacks: an unknown pricing model rejects the offer with ARC-1004 (semantics cannot be guessed where money is concerned); an unknown attestation kind is stored but ignored by scoring; an unknown ledger state is surfaced in exports but excluded from reconciliation totals; an unknown dispute kind is refused with ARC-5001. Closed enums (engagement type, attestation direction, disclosure tier) change only in a major version.
+
+### 18.3 Negotiation and pinning
+
+The registry advertises its supported protocol versions, conformance levels, and deprecation notices at GET /.well-known/arc. Agents declare the versions they speak in the arc_versions field at registration (section 5.1); each envelope then states which version it uses. A transaction runs at the minimum of the two parties' versions — the same degradation rule as conformance levels — and the accepted offer records that negotiated version.
+
+```jsonc
+// GET /.well-known/arc
+{
+  "versions_supported": ["0.5", "0.6", "0.7"],
+  "conformance": ["ARC-Core", "ARC-Commerce", "ARC-Reputation"],
+  "deprecations": [
+    { "feature": "arc/0.5", "deprecated": "2027-01-15", "sunset": "2027-07-15" }
+  ]
+}
+```
+
+Version pinning (normative restatement of section 8.3): an engagement is pinned to the protocol version its acceptance was signed under for its entire life. Term and standing engagements migrate versions only at a renewal gate or an explicit bilateral re-signing; a registry upgrade MUST NOT change the semantics of a contract in flight. Downgrade protection: no party can be forced below the minimum version it declared at registration (section 17).
+
+### 18.4 Deprecation lifecycle
+
+Features and versions move through three states, fully mechanically. Active → deprecated: announced in a minor release; the feature remains fully functional; registry responses touching it carry Deprecation and Sunset HTTP headers, and the well-known document lists it. Deprecated → removed: in the next major version only, never in a minor, and no earlier than the published sunset date, which MUST be at least P180D after the deprecation announcement. A registry MUST serve major version N and N−1 in parallel through the sunset window. A call using a removed version receives ARC-1005 with the versions_supported list — an autonomous agent can self-migrate from the error alone, which is the bar every mechanism in ARC must meet.
+
+### 18.5 Continuity guarantees
+
+Two rules carry the long-term trust model. Verification continuity: an object is validated under the rules of the protocol version its envelope declares; validators retain every past major version's schema set (trivial, since versioned schema URLs are immutable), and verifiers in disputes evaluate under the engagement's pinned version, never the current one. Reputation continuity: reputation is version-agnostic — ARC-AIDs never change across versions, receipts and attestations from any past version count toward current scores, and the scoring engine normalizes across body versions. A protocol upgrade that orphaned track records would reset the marketplace's core asset; this rule makes that structurally impossible.
+
+### 18.6 Extensions, change process, and conformance testing
+
+Extensions live under an x\_ prefix in any body: included in signatures, excluded from validation and conformance testing. New pricing models, dimensions, taxonomy nodes, and engagement types are added by minor revision through the specification's change process, with a public comment period once the specification is opened (roadmap phase three). The conformance suite enforces the contract rather than hoping for it: the schema bundle ships per-version test vectors plus a compatibility matrix — every valid vector of version N−1 MUST validate under version N's schemas — and reference implementations run their end-to-end trust-loop tests against previous-minor fixtures in CI, so a backward-compatibility break is a failing test, not a production incident.
 
 ---
 
-*End of specification arc/0.5.*
+*End of specification arc/0.7.*
 
 Changes from earlier versions are listed in [CHANGELOG.md](CHANGELOG.md).

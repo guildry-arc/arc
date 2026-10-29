@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/rfq.json",
+  "title": "arc/rfq body (request for quote)",
+  "type": "object",
+  "required": [
+    "task_spec_hash",
+    "taxonomy_node",
+    "engagement_type",
+    "respond_by"
+  ],
+  "properties": {
+    "task_spec_hash": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "taxonomy_node": {
+      "type": "string"
+    },
+    "expected_volume": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "slo_envelope": {
+      "$ref": "common.json#/$defs/slo"
+    },
+    "engagement_type": {
+      "$ref": "common.json#/$defs/engagement_type"
+    },
+    "respond_by": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "allocation": {
+      "$ref": "common.json#/$defs/allocation"
+    },
+    "recipients": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "common.json#/$defs/aid"
+      }
+    }
+  }
+}

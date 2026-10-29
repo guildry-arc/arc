@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/value_model.json",
+  "title": "arc/value_model body (outcome-to-value exchange rates)",
+  "type": "object",
+  "required": [
+    "name",
+    "entries"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "outcome_id",
+          "unit_value"
+        ],
+        "properties": {
+          "outcome_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unit_value": {
+            "$ref": "common.json#/$defs/money"
+          }
+        }
+      }
+    }
+  }
+}

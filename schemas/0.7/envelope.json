@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/envelope.json",
+  "title": "ARC message envelope",
+  "type": "object",
+  "required": [
+    "arc",
+    "type",
+    "id",
+    "issuer",
+    "issued",
+    "body",
+    "sig"
+  ],
+  "properties": {
+    "arc": {
+      "type": "string",
+      "pattern": "^0\\.[0-9]+$",
+      "description": "Protocol version this object was produced under (major.minor). Validators use the matching schema set (spec §18.5)."
+    },
+    "type": {
+      "enum": [
+        "arc/registration",
+        "arc/card",
+        "arc/policy",
+        "arc/snapshot",
+        "arc/rfq",
+        "arc/quote",
+        "arc/offer",
+        "arc/acceptance",
+        "arc/engagement",
+        "arc/receipt",
+        "arc/attestation",
+        "arc/value_model",
+        "arc/outcome",
+        "arc/test_report",
+        "arc/dispute",
+        "arc/verdict"
+      ]
+    },
+    "id": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "issuer": {
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/did"
+        },
+        {
+          "$ref": "common.json#/$defs/aid"
+        }
+      ]
+    },
+    "issued": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "expires": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "body": {
+      "type": "object"
+    },
+    "sig": {
+      "$ref": "common.json#/$defs/jws"
+    }
+  },
+  "additionalProperties": false
+}

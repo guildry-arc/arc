@@ -1,5 +1,5 @@
 {
-  "arc": "0.5",
+  "arc": "0.7",
   "type": "arc/receipt",
   "id": "urn:uuid:00000005-0000-4000-8000-000000000005",
   "issuer": "did:web:seller.example",

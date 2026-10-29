@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.7/quote.json",
+  "title": "arc/quote body (time-limited firm ask)",
+  "type": "object",
+  "required": [
+    "rfq_ref",
+    "seller_aid",
+    "card_ref",
+    "price",
+    "valid_until"
+  ],
+  "properties": {
+    "rfq_ref": {
+      "$ref": "common.json#/$defs/uuid"
+    },
+    "seller_aid": {
+      "$ref": "common.json#/$defs/aid"
+    },
+    "card_ref": {
+      "$ref": "common.json#/$defs/hash"
+    },
+    "price": {
+      "$ref": "common.json#/$defs/pricing"
+    },
+    "slo": {
+      "$ref": "common.json#/$defs/slo"
+    },
+    "valid_until": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "negotiable_dimensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
