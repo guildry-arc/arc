@@ -1,0 +1,14 @@
+{
+  "name": "AP automation",
+  "version": "1",
+  "entries": [
+    {
+      "outcome_id": "invoice_processed",
+      "description": "One invoice posted to the ledger without manual edits",
+      "unit_value": {
+        "amount": "0.60",
+        "currency": "USD"
+      }
+    }
+  ]
+}

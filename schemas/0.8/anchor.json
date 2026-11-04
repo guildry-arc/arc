@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/guildry-arc/arc/main/schemas/0.8/anchor.json",
+  "title": "Anchored Merkle root (GET /v1/anchors/latest; ARC-Port, spec §19.3)",
+  "type": "object",
+  "required": [
+    "root",
+    "period",
+    "chain",
+    "contract",
+    "tx",
+    "anchored"
+  ],
+  "properties": {
+    "root": {
+      "$ref": "common.json#/$defs/hash",
+      "description": "SHA-256 Merkle root over the canonical bytes of every envelope accepted in the period"
+    },
+    "period": {
+      "$ref": "common.json#/$defs/duration",
+      "description": "Anchoring cadence declared in /.well-known/arc (default PT1H)"
+    },
+    "chain": {
+      "type": "string",
+      "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$",
+      "description": "CAIP-2 chain id, e.g. eip155:8453 (Base)"
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{40}$",
+      "description": "Append-only anchor contract address"
+    },
+    "tx": {
+      "type": "string",
+      "pattern": "^0x[0-9a-fA-F]{64}$",
+      "description": "Transaction that wrote the root"
+    },
+    "anchored": {
+      "$ref": "common.json#/$defs/timestamp"
+    },
+    "envelopes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of envelopes covered by this root"
+    }
+  }
+}

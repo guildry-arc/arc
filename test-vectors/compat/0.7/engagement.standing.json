@@ -1,0 +1,19 @@
+{
+  "type": "standing",
+  "epoch": "P30D",
+  "committed_volume": {
+    "min_tasks": 900,
+    "unit_price": "0.005"
+  },
+  "renewal_gate": {
+    "policy_ref": "sha256:10d354043fc8dcfcbced21ca7bf0641c0aca60b64e28661aabee230a63c60bce",
+    "trend": {
+      "dimension": "accuracy",
+      "max_decline_epochs": 2
+    }
+  },
+  "termination": {
+    "notice": "P14D",
+    "breach_exit": "rolling_slo_breach"
+  }
+}

@@ -21,7 +21,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = "0.7"
+VERSION = "0.8"
 
 schema_sets = {
     d.name: {p.name: json.loads(p.read_text()) for p in sorted(d.glob("*.json"))}

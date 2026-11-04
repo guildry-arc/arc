@@ -4,8 +4,8 @@
     "buyer"
   ],
   "arc_versions": [
-    "0.6",
-    "0.7"
+    "0.7",
+    "0.8"
   ],
   "buyer": {
     "payment_mandate": {

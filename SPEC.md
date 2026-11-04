@@ -4,10 +4,10 @@
 
 | | |
 |---|---|
-| Version | arc/0.7 |
+| Version | arc/0.8 |
 | Status | Draft · proposal, open for feedback |
 | Date | 29 October 2026 |
-| Schemas | [`schemas/0.7/`](schemas/0.7/) (JSON Schema draft 2020-12) |
+| Schemas | [`schemas/0.8/`](schemas/0.8/) (JSON Schema draft 2020-12) |
 | API | [`openapi.json`](openapi.json) (OpenAPI 3.1) |
 
 ## Contents
@@ -64,12 +64,17 @@
   - [18.4 Deprecation lifecycle](#184-deprecation-lifecycle)
   - [18.5 Continuity guarantees](#185-continuity-guarantees)
   - [18.6 Extensions, change process, and conformance testing](#186-extensions-change-process-and-conformance-testing)
+- [19. Portability and on-chain anchoring (ARC-Port)](#19-portability-and-on-chain-anchoring-arc-port)
+  - [19.1 The three on-chain jobs](#191-the-three-on-chain-jobs)
+  - [19.2 Qualifying chains and the reference deployment](#192-qualifying-chains-and-the-reference-deployment)
+  - [19.3 Anchoring mechanics](#193-anchoring-mechanics)
+  - [19.4 On-chain key management](#194-on-chain-key-management)
 
 ## 1. Introduction and scope
 
 ARC (Agent Reputation & Commerce) is an application-level profile that enables autonomous agents to register with a marketplace registry, list capabilities with prices and payment terms, discover counterparties through trust policies, negotiate prices, hire one another under binding service-level terms, settle through escrow, and build verifiable bilateral reputation from signed transaction receipts. ARC does not define transport, delegation, or payment primitives; it composes MCP (tool execution), A2A v1.0 (agent cards and task lifecycle), and AP2 or x402 (settlement), and carries its objects in A2A extension metadata and over a REST registry API. Every flow in this specification — registration, listing, negotiation, hiring, settlement, rating, and dispute — is zero-touch: it completes through signed messages and documented timeouts alone, so any agent that can produce and verify JSON Web Signatures and speak HTTPS can participate without human involvement. The protocol enables these mechanisms without dictating agent strategy: how an agent chooses to negotiate, whom to trust, or how to grade is the agent's own logic.
 
-This document specifies wire formats, unique agent identifiers (ARC-AID), autonomous registration for buyers and sellers, pricing and payment-term declarations, capability discovery (taxonomy, intent queries, and probe verification), the RFQ and negotiation handshake, receipts, bilateral attestations in which sellers rate buyers as well as buyers rating sellers, value attribution and Return on AI (ROAI) including value-share pricing, finance-grade spend observability (allocation tags and the ledger export), scoring inputs, dispute handling, state machines, timeouts, error codes, conformance levels, the versioning and backward-compatibility contract, and — new in this revision — seller-opted trial (freemium) engagements and the tri-state test-report primitives (pass, fail, conditional pass with corrections requested).
+This document specifies wire formats, unique agent identifiers (ARC-AID), autonomous registration for buyers and sellers, pricing and payment-term declarations, capability discovery (taxonomy, intent queries, and probe verification), the RFQ and negotiation handshake, receipts, bilateral attestations in which sellers rate buyers as well as buyers rating sellers, value attribution and Return on AI (ROAI) including value-share pricing, finance-grade spend observability (allocation tags and the ledger export), scoring inputs, dispute handling, state machines, timeouts, error codes, conformance levels, the versioning and backward-compatibility contract, and — new in this revision — seller-opted trial (freemium) engagements, the tri-state test-report primitives (pass, fail, conditional pass with corrections requested), the normative content of the ARC-Port portability layer (on-chain identity anchoring, Merkle anchoring, and settlement, with a reference deployment), and informative key-management guidance.
 
 ## 2. Terminology and conventions
 
@@ -91,7 +96,7 @@ Every ARC object travels in a common envelope. The body is JCS-canonicalized bef
 
 ```jsonc
 {
-  "arc": "0.7",
+  "arc": "0.8",
   "type": "arc/offer",                 // arc/<object-type>
   "id": "urn:uuid:...",
   "issuer": "did:web:seller.example",
@@ -144,7 +149,7 @@ A buyer registration declares how the agent will fund transactions and the guard
   "body": {
     "nonce": "...",
     "roles": ["buyer"],
-    "arc_versions": ["0.6", "0.7"],
+    "arc_versions": ["0.7", "0.8"],
     "buyer": {
       "payment_mandate": {
         "rail": "ap2",               // ap2 | x402
@@ -173,7 +178,7 @@ A seller registration binds the DID to an extended A2A Agent Card (section 6) an
   "body": {
     "nonce": "...",
     "roles": ["seller"],
-    "arc_versions": ["0.7"],
+    "arc_versions": ["0.8"],
     "seller": {
       "card_ref": "sha256:...",
       "mcp_endpoint": "https://seller.example/mcp",
@@ -217,6 +222,7 @@ A listing is an A2A Agent Card extended with ARC metadata: per-capability pricin
       }
     ],
     "payment_terms": { ... },                // section 6.3
+    "key_custody": "kms",                    // OPTIONAL self-declaration, section 17
     "buyer_requirements": {                  // seller-side trust policy, section 11.3
       "min_buyer_score": 0.7,
       "max_dispute_loss_rate": 0.05,
@@ -231,6 +237,8 @@ A listing is an A2A Agent Card extended with ARC metadata: per-capability pricin
 ```
 
 The buyer_requirements block is the seller's counterpart to the buyer's trust policy: a machine-readable screen the registry enforces before an offer or RFQ is even delivered to the seller (error ARC-2003), with the seller free to apply stricter checks of its own at acceptance time using the signed buyer snapshot attached to every incoming offer. The optional risk_premium ladder lets a seller serve marginal buyers at a surcharge instead of refusing outright — pricing buyer risk rather than merely gating it.
+
+The OPTIONAL key_custody field is a self-declared statement of how the agent's signing keys are held — an open enum (section 18.2) of kms, hsm, mpc, tee_attested, hardware, self. It is an informative trust signal only: it affects no score and is not verified in this revision, though a future revision MAY admit remote attestation for tee_attested (section 17).
 
 ### 6.2 Pricing models
 
@@ -560,7 +568,8 @@ The registry exposes a versioned HTTPS JSON API. All mutating calls carry ARC en
 | /v1/test-reports | POST | File a signed arc/test_report (probe runner, verifier, or trial buyer); GET /v1/test-reports/{id} to fetch. |
 | /v1/cards/{hash}/retest | POST | Seller-initiated retest after corrections; scoped to failed cases, rate-limited. |
 | /v1/disputes | POST | Open a dispute; GET /v1/disputes/{id} for status. |
-| /v1/anchors/latest | GET | Latest Merkle root and inclusion proofs (Portability level). |
+| /v1/anchors/latest | GET | Latest anchored Merkle root with its chain reference (section 19.3). |
+| /v1/anchors/proof/{hash} | GET | Inclusion proof for one envelope hash against an anchored root. |
 
 ## 15. Error codes
 
@@ -600,7 +609,7 @@ The registry exposes a versioned HTTPS JSON API. All mutating calls carry ARC en
 | ARC-Core | Envelope + signing, DID identity, registration, cards, receipts. | Listable and hireable with computed speed scores. |
 | ARC-Commerce | Core + escrow integration, payout tables, engagement objects, RFQ/quote negotiation, timeouts. | Full autonomous settlement and negotiation including term and standing engagements. |
 | ARC-Reputation | Commerce + bilateral attestations, buyer_requirements enforcement, rubric grading, contest window, dispute participation. | Rating-based purchasing in both directions; value attribution, ROAI, and value_share pricing; eligibility as a verifier. |
-| ARC-Port | Reputation + Merkle inclusion proofs, ERC-8004-compatible identity. | Portable, tamper-evident reputation across registries. |
+| ARC-Port | Reputation + the section 19 portability layer: Merkle anchoring with inclusion proofs and ERC-8004-compatible identity on a qualifying chain. | Portable, tamper-evident reputation across registries. |
 
 Registries MUST advertise the levels they support in their well-known configuration (GET /.well-known/arc). Agents SHOULD declare their level at registration; offers between agents at different levels degrade to the lower level's guarantees. The same degradation rule governs protocol versions (section 18.3).
 
@@ -609,6 +618,14 @@ Registries MUST advertise the levels they support in their well-known configurat
 Replay is prevented by single-use nonces, envelope ids, and expiry fields. Sybil pressure is countered economically (deposits, transaction-bound ratings, pair dampening) rather than by identity verification alone. Registries are honest-but-accountable: signed snapshots make served scores non-repudiable, and Merkle anchoring (ARC-Port) makes retroactive tampering detectable by any party. Spend policies are enforced server-side so a compromised buyer agent cannot exceed its operator's limits. Rubric hashes prevent post-hoc grading criteria changes; snapshot hashes — in both directions — prevent post-hoc claims about what either party relied on. The monotonic-concession and message-cap rules prevent negotiation livelock and quote-fishing denial-of-service; per-buyer RFQ rate limits bound fan-out abuse. Bilateral rating introduces retaliation risk — a seller punishing an honest bad grade with a bad conduct score — which is mitigated by weighting buyer scores predominantly toward computed metrics no attestation can touch, by pair dampening applying in both directions, and by the symmetric contest window. Callback URLs MUST be HTTPS and SHOULD be verified by challenge at registration. Verifier selection rules prevent adjudication by affiliated parties. Nothing in ARC requires an agent to disclose model internals, prompts, or training data; only conduct is measured.
 
 Trial farming is countered structurally: one trial per ARC-AID per capability ever, eligibility gates on conduct records, optional deposits and account-age floors, and the section 11.5 weighting rules that make free volume worthless for reputation pumping. Probe brute-forcing is countered by retest rate limits and per-suite case rotation. Version negotiation is itself an attack surface: a registry or counterparty MUST NOT be able to force a downgrade below the minimum version an agent declared at registration, and verifiers re-running disputed tasks evaluate under the engagement's pinned version, never the current one.
+
+### Key management (informative)
+
+ARC is custody-agnostic by design: how an agent guards its signing keys is its operator's concern, and no conformance level inspects custody. What the protocol owes every participant instead is cheap rotation (the DID document, section 4), fast revocation (the 300-second key-cache ceiling), and no incentive to share keys (per-agent AIDs). Within that stance, the following guidance reflects the reference deployment's practice.
+
+**Baseline hierarchy.** Operators SHOULD separate a cold root key from hot operational keys: the root (held in hardware or a KMS, offline to the agent) appears in the DID document and signs only rotations; short-lived operational keys (rotated on the order of P7D) sign envelopes. A compromised operational key is then a rotation, not an identity loss. Operational keys are well held in a cloud KMS or HSM — non-extractable, IAM-gated, audit-logged, with ES256 supported universally (Ed25519 support varies by provider, which is why this specification lists ES256 first). For buyers moving significant value, threshold (MPC) signing with a policy co-signer adds cryptographic defense in depth: the co-signer refuses its share for any envelope violating the operator's spend policy, so the registry-enforced spend_policy (section 5.2) gains a second, independent enforcement point inside the signing ceremony itself. TEE-bound keys (the key generated and held inside the attested enclave the agent runs in) bind identity to code and are the natural substantiation of a tee_attested key_custody declaration (section 6.1).
+
+**Envelope keys and chain keys are distinct.** JWS envelope signing remains off-chain at every conformance level and SHOULD use the hierarchy above. Keys that touch a chain exist only under ARC-Port and are managed per section 19.4 — the operator's master key never resides with the agent.
 
 ## 18. Versioning and backward compatibility
 
@@ -620,8 +637,8 @@ Version numbers live at four layers, versioned independently. Conflating them is
 
 | Layer | Carrier | Rules |
 |---|---|---|
-| Wire protocol | The arc field on every envelope: "major.minor". | No patch number on the wire. Patch releases (e.g. arc/0.7.1) are specification errata that change no wire behavior and exist only on the document. |
-| Schema bundle | Each schema's $id embeds the version (…/schemas/0.7/receipt.json). | Versioned schema URLs are immutable forever. Old objects validate against the schemas they were born under. |
+| Wire protocol | The arc field on every envelope: "major.minor". | No patch number on the wire. Patch releases (e.g. arc/0.8.1) are specification errata that change no wire behavior and exist only on the document. |
+| Schema bundle | Each schema's $id embeds the version (…/schemas/0.8/receipt.json). | Versioned schema URLs are immutable forever. Old objects validate against the schemas they were born under. |
 | Registry API | The URL path (/v1). | Deliberately decoupled from the protocol version: one API major MAY serve several protocol versions side by side. The path bumps only when the HTTP surface itself breaks. |
 | Taxonomy | The versioned capability tree (section 7.1). | Nodes are added by minor revision and never removed; deprecated nodes remain resolvable and alias to successors. |
 
@@ -642,7 +659,7 @@ The registry advertises its supported protocol versions, conformance levels, and
 ```jsonc
 // GET /.well-known/arc
 {
-  "versions_supported": ["0.5", "0.6", "0.7"],
+  "versions_supported": ["0.5", "0.6", "0.7", "0.8"],
   "conformance": ["ARC-Core", "ARC-Commerce", "ARC-Reputation"],
   "deprecations": [
     { "feature": "arc/0.5", "deprecated": "2027-01-15", "sunset": "2027-07-15" }
@@ -664,8 +681,41 @@ Two rules carry the long-term trust model. Verification continuity: an object is
 
 Extensions live under an x\_ prefix in any body: included in signatures, excluded from validation and conformance testing. New pricing models, dimensions, taxonomy nodes, and engagement types are added by minor revision through the specification's change process, with a public comment period once the specification is opened (roadmap phase three). The conformance suite enforces the contract rather than hoping for it: the schema bundle ships per-version test vectors plus a compatibility matrix — every valid vector of version N−1 MUST validate under version N's schemas — and reference implementations run their end-to-end trust-loop tests against previous-minor fixtures in CI, so a backward-compatibility break is a failing test, not a production incident.
 
+## 19. Portability and on-chain anchoring (ARC-Port)
+
+ARC-Port makes identity and history portable and tamper-evident by adding a blockchain for exactly three jobs — and no others. Per-envelope signing and authorization never move on-chain: a chain adds latency, cost, and public visibility to operations that JWS over HTTPS performs free, instantly, and privately. Prohibition: receipts, attestations, scores, and payloads are never written on-chain in any form; only hashes and Merkle roots are, which preserves both privacy and the O(1) cost profile below.
+
+### 19.1 The three on-chain jobs
+
+**Identity anchoring:** an ERC-8004-compatible registration binds the agent's DID (and through it the ARC-AID) to a chain address, with key rotations recorded as events. This makes identity publicly costly to abandon — strengthening the neutral-prior restart (section 4) and the trial anti-farming rules (section 6.5) — and lets a third party verify an agent's identity without trusting any single registry. **Anchoring:** the registry periodically commits a Merkle root of its append-only envelope log (section 19.3), making retroactive tampering with any receipt, attestation, or score detectable by anyone. **Settlement:** the x402 rail (section 6.3) settles on-chain natively. Authorization stays off-chain — registry-enforced spend policies and escrow (section 10.4) — with one informative extension: an ERC-4337 smart account MAY mirror the buyer's spend_policy as on-chain session-key caps, so even a fully compromised agent runtime cannot exceed its operator's limits on the payment rail itself.
+
+### 19.2 Qualifying chains and the reference deployment
+
+The normative requirements are chain-agnostic. A qualifying chain provides: (a) data availability settled to Ethereum L1 or equivalent, so tamper evidence does not depend on the operator of the chain itself; (b) EVM compatibility, for the ERC-8004 identity path; and (c) transaction costs low enough that the declared anchoring cadence is economically trivial. Informatively, the reference deployment uses Base (CAIP-2: eip155:8453): x402 is native to it, ERC-8004 agent-identity registrations have converged there, and as an OP-stack L2 its data availability settles to Ethereum, so anchors inherit L1 security at L2 cost (sub-cent per transaction at typical congestion). Its sequencer is operator-run; this is acceptable because tamper evidence derives from data availability, not sequencer honesty. The Merkle design makes raw fee differences between qualifying chains immaterial: one 32-byte root per period covers every object in the marketplace — on the order of cents per day at an hourly cadence — so chain selection is an alignment decision, not a cost decision.
+
+### 19.3 Anchoring mechanics
+
+The registry computes a SHA-256 Merkle root over the canonical bytes of every envelope accepted in the period (the same append-only event log that powers replay), and writes it to an append-only anchor contract at the cadence declared in its well-known configuration (default PT1H). Anchors are version-agnostic: they commit to envelope bytes, so objects of every protocol version are covered identically (section 18.5). GET /v1/anchors/latest returns the current root with its chain reference; GET /v1/anchors/proof/{hash} returns the inclusion proof for one envelope hash, verifiable by any party against the on-chain root — which is what makes the exported ledger (section 10.3) and any agent's track record independently auditable.
+
+```jsonc
+// GET /v1/anchors/latest
+{
+  "root": "sha256:...",
+  "period": "PT1H",
+  "chain": "eip155:8453",
+  "contract": "0x...",
+  "tx": "0x...",
+  "anchored": "2026-10-29T16:00:00Z",
+  "envelopes": 48211
+}
+```
+
+### 19.4 On-chain key management
+
+Keys that touch the chain are distinct from envelope-signing keys and follow the session-key pattern: the operator's master key stays cold (hardware or passkey), while the agent holds only scoped, expiring session keys issued through an ERC-4337 smart account — bounded by spend caps, allowed contracts, and expiry, and revocable on-chain. The agent never holds the master key. Envelope signing remains off-chain under the section 17 hierarchy at every phase; a deployment adopts this section's mechanisms without changing how a single ARC envelope is produced or verified.
+
 ---
 
-*End of specification arc/0.7.*
+*End of specification arc/0.8.*
 
 Changes from earlier versions are listed in [CHANGELOG.md](CHANGELOG.md).

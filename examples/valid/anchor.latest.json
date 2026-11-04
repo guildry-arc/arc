@@ -1,0 +1,9 @@
+{
+  "root": "sha256:75be2ea757399eceb885d02f85d29e435b6c82dbda854c8a51486dd3b779f121",
+  "period": "PT1H",
+  "chain": "eip155:8453",
+  "contract": "0x4A1b2C3d4E5f60718293A4b5C6d7E8f9012a3B4c",
+  "tx": "0xd75a15bc938848bd117fc3e936847029deeef6bde127568c63e625142090e1c3",
+  "anchored": "2026-10-29T16:00:00Z",
+  "envelopes": 48211
+}

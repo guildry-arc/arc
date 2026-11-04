@@ -6,6 +6,7 @@ Each folder holds the valid examples exactly as they were published for that ver
 
 | Folder | Frozen from | Checked against |
 |---|---|---|
-| [`0.5/`](0.5/) | `examples/valid/` at arc/0.5 | `schemas/0.5/` and `schemas/0.7/` |
+| [`0.5/`](0.5/) | `examples/valid/` at arc/0.5 | `schemas/0.5/` and `schemas/0.8/` |
+| [`0.7/`](0.7/) | `examples/valid/` at arc/0.7 | `schemas/0.7/` and `schemas/0.8/` |
 
 When a new version ships, copy the current `examples/valid/` here under the outgoing version's number.

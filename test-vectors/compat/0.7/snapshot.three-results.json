@@ -1,0 +1,25 @@
+{
+  "query_ref": "urn:uuid:00000001-0000-4000-8000-000000000001",
+  "as_of": "2026-08-25T10:29:58Z",
+  "results": [
+    {
+      "aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+      "card_ref": "sha256:6887924e3afd0ff4b253febd733abb8a4d3ef272a5f8ce41f359fb35ab837d94",
+      "capability": "invoice-data-extraction",
+      "scores": {
+        "accuracy": 0.978,
+        "speed_p95_ms": 2400
+      },
+      "samples": 1284,
+      "confidence": 0.93,
+      "probe_verified": true,
+      "probe_at": "2026-08-24T00:00:00Z",
+      "roai_band": {
+        "low": 3.1,
+        "median": 5.2,
+        "high": 7.4,
+        "buyers": 9
+      }
+    }
+  ]
+}

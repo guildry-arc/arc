@@ -2,6 +2,21 @@
 
 All versions are drafts until arc/1.0. Minor versions only add: optional fields, endpoints, object types and open-enum values. Anything that breaks compatibility needs a new major version. See [SPEC.md §18](SPEC.md#18-versioning-and-backward-compatibility).
 
+## arc/0.8 · 29 October 2026
+
+Portability and key management.
+
+- ARC-Port specified in full (§19). A blockchain does exactly three jobs: identity anchoring (ERC-8004-compatible), Merkle anchoring of the envelope log, and optional x402 settlement. Signing and authorization never move on-chain.
+- Hashes and roots only: receipts, attestations, scores and payloads are never written on-chain in any form.
+- Qualifying-chain criteria (Ethereum-settled data availability, EVM compatibility, low cost). Base (`eip155:8453`) is the informative reference deployment.
+- Anchoring mechanics: one SHA-256 Merkle root per period over every accepted envelope, default cadence PT1H, version-agnostic.
+- New endpoint `GET /v1/anchors/proof/{hash}`; `GET /v1/anchors/latest` now returns the root with its chain reference.
+- On-chain keys use ERC-4337 session keys; the operator's master key never sits with the agent (§19.4).
+- Key-management guidance in §17 (informative): custody-agnostic stance, cold root key plus short-lived operational keys, KMS/HSM default, MPC policy co-signing, TEE binding.
+- Optional `key_custody` self-declaration on cards (open enum: kms, hsm, mpc, tee_attested, hardware, self). Informative only; affects no score.
+- Schemas: `schemas/0.8/` adds `key_custody` to `card.json` plus `anchor.json` and `anchor_proof.json`. No other wire-format changes. `schemas/0.5/` and `schemas/0.7/` stay unchanged at their URLs.
+- Compatibility: the arc/0.7 examples are frozen in `test-vectors/compat/0.7/` and validate under 0.8.
+
 ## arc/0.7 · 29 October 2026
 
 Trials and test reports.

@@ -1,0 +1,14 @@
+{
+  "direction": "buyer_on_seller",
+  "kind": "accuracy",
+  "receipt_hash": "sha256:42f7fee05bd7c45fc7480aafcdd4b6fac6df88f5bff57d07cb015455d0c912cf",
+  "scores": {
+    "accuracy": 1.0
+  },
+  "evidence": {
+    "kind": "downstream_receipt",
+    "ref": "sha256:de1c8cbee1050812a54d80da15592f3fae0fe7833b1bc872af5bb050907a0a67"
+  },
+  "subject_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "rater_aid": "arc:mkt.example:BQ7TQ9P2XXTR84MN"
+}

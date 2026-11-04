@@ -1,0 +1,9 @@
+{
+  "kind": "accuracy_miss_claim",
+  "receipt_hash": "sha256:42f7fee05bd7c45fc7480aafcdd4b6fac6df88f5bff57d07cb015455d0c912cf",
+  "opened_by": "arc:mkt.example:7K3MQ9P2XXTR84MN",
+  "claim": "Totals match the source PDF; accuracy_miss payout tier was applied in error.",
+  "evidence": [
+    "sha256:e1cc477f50f8a7438bb118c1258ba5b176561cfab86cda66a31b5841976bae40"
+  ]
+}

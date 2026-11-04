@@ -1,0 +1,20 @@
+{
+  "nonce": "n-0a9b8c7d6e5f4a3b",
+  "roles": [
+    "seller"
+  ],
+  "seller": {
+    "card_ref": "sha256:6887924e3afd0ff4b253febd733abb8a4d3ef272a5f8ce41f359fb35ab837d94",
+    "mcp_endpoint": "https://seller.example/mcp",
+    "payout_address": {
+      "rail": "x402",
+      "ref": "payout-0001"
+    },
+    "engagement_types": [
+      "spot",
+      "term",
+      "standing"
+    ],
+    "callback_url": "https://seller.example/arc"
+  }
+}

@@ -3,9 +3,9 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "ARC Registry API",
-    "version": "arc/0.7",
+    "version": "arc/0.8",
     "summary": "The registry surface of ARC, the Agent Reputation & Commerce protocol.",
-    "description": "Generated from the ARC Protocol Specification arc/0.7 (§14). Request and response bodies reference the schemas in `schemas/0.7/`, the single source of truth for object shapes. All mutating calls carry signed ARC envelopes; responses carrying scores or listings are registry-signed. Idempotency is by envelope id. This is a draft: error-body shape and some query parameters are not yet normative.",
+    "description": "Generated from the ARC Protocol Specification arc/0.8 (§14). Request and response bodies reference the schemas in `schemas/0.8/`, the single source of truth for object shapes. All mutating calls carry signed ARC envelopes; responses carrying scores or listings are registry-signed. Idempotency is by envelope id. This is a draft: error-body shape and some query parameters are not yet normative.",
     "contact": {
       "name": "Guildry",
       "email": "hello@guildry.tech",
@@ -112,7 +112,7 @@
                 ],
                 "properties": {
                   "did": {
-                    "$ref": "./schemas/0.7/common.json#/$defs/did"
+                    "$ref": "./schemas/0.8/common.json#/$defs/did"
                   }
                 }
               }
@@ -135,7 +135,7 @@
                       "minLength": 16
                     },
                     "expires": {
-                      "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
+                      "$ref": "./schemas/0.8/common.json#/$defs/timestamp"
                     }
                   }
                 }
@@ -171,13 +171,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/registration.json"
+                        "$ref": "./schemas/0.8/registration.json"
                       }
                     }
                   }
@@ -269,13 +269,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/card.json"
+                        "$ref": "./schemas/0.8/card.json"
                       }
                     }
                   }
@@ -323,7 +323,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/hash"
+              "$ref": "./schemas/0.8/common.json#/$defs/hash"
             }
           }
         ],
@@ -366,7 +366,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/hash"
+              "$ref": "./schemas/0.8/common.json#/$defs/hash"
             }
           }
         ],
@@ -376,7 +376,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "./schemas/0.7/envelope.json"
+                "$ref": "./schemas/0.8/envelope.json"
               }
             }
           }
@@ -496,13 +496,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/policy.json"
+                        "$ref": "./schemas/0.8/policy.json"
                       }
                     }
                   }
@@ -519,13 +519,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.7/envelope.json"
+                      "$ref": "./schemas/0.8/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.7/snapshot.json"
+                          "$ref": "./schemas/0.8/snapshot.json"
                         }
                       }
                     }
@@ -563,13 +563,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/rfq.json"
+                        "$ref": "./schemas/0.8/rfq.json"
                       }
                     }
                   }
@@ -617,7 +617,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
+              "$ref": "./schemas/0.8/common.json#/$defs/uuid"
             }
           }
         ],
@@ -631,13 +631,13 @@
                   "items": {
                     "allOf": [
                       {
-                        "$ref": "./schemas/0.7/envelope.json"
+                        "$ref": "./schemas/0.8/envelope.json"
                       },
                       {
                         "type": "object",
                         "properties": {
                           "body": {
-                            "$ref": "./schemas/0.7/quote.json"
+                            "$ref": "./schemas/0.8/quote.json"
                           }
                         }
                       }
@@ -675,7 +675,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/aid"
+              "$ref": "./schemas/0.8/common.json#/$defs/aid"
             }
           }
         ],
@@ -719,13 +719,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/engagement.json"
+                        "$ref": "./schemas/0.8/engagement.json"
                       }
                     }
                   }
@@ -774,13 +774,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/receipt.json"
+                        "$ref": "./schemas/0.8/receipt.json"
                       }
                     }
                   }
@@ -828,7 +828,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/hash"
+              "$ref": "./schemas/0.8/common.json#/$defs/hash"
             }
           }
         ],
@@ -840,13 +840,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.7/envelope.json"
+                      "$ref": "./schemas/0.8/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.7/receipt.json"
+                          "$ref": "./schemas/0.8/receipt.json"
                         }
                       }
                     }
@@ -884,13 +884,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/attestation.json"
+                        "$ref": "./schemas/0.8/attestation.json"
                       }
                     }
                   }
@@ -939,13 +939,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/value_model.json"
+                        "$ref": "./schemas/0.8/value_model.json"
                       }
                     }
                   }
@@ -993,7 +993,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/hash"
+              "$ref": "./schemas/0.8/common.json#/$defs/hash"
             }
           }
         ],
@@ -1005,13 +1005,13 @@
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "./schemas/0.7/envelope.json"
+                      "$ref": "./schemas/0.8/envelope.json"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "body": {
-                          "$ref": "./schemas/0.7/value_model.json"
+                          "$ref": "./schemas/0.8/value_model.json"
                         }
                       }
                     }
@@ -1049,13 +1049,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/outcome.json"
+                        "$ref": "./schemas/0.8/outcome.json"
                       }
                     }
                   }
@@ -1103,7 +1103,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/aid"
+              "$ref": "./schemas/0.8/common.json#/$defs/aid"
             }
           }
         ],
@@ -1137,7 +1137,7 @@
           "Finance"
         ],
         "summary": "Incremental, buyer-scoped ledger records for ERP reconciliation",
-        "description": "Allocation-field filters are part of the spec; their query syntax is not yet fixed in arc/0.7. See spec §10.3.",
+        "description": "Allocation-field filters are part of the spec; their query syntax is not yet fixed in arc/0.8. See spec §10.3.",
         "operationId": "get_v1_ledger",
         "parameters": [
           {
@@ -1161,7 +1161,7 @@
             "required": false,
             "description": "Start of period (event time, inclusive).",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
+              "$ref": "./schemas/0.8/common.json#/$defs/timestamp"
             }
           },
           {
@@ -1170,7 +1170,7 @@
             "required": false,
             "description": "End of period (event time, exclusive).",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/timestamp"
+              "$ref": "./schemas/0.8/common.json#/$defs/timestamp"
             }
           },
           {
@@ -1191,7 +1191,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "./schemas/0.7/ledger_record.json"
+                    "$ref": "./schemas/0.8/ledger_record.json"
                   }
                 }
               }
@@ -1269,13 +1269,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/test_report.json"
+                        "$ref": "./schemas/0.8/test_report.json"
                       }
                     }
                   }
@@ -1323,7 +1323,7 @@
             "required": true,
             "description": "Envelope id of the test report.",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
+              "$ref": "./schemas/0.8/common.json#/$defs/uuid"
             }
           }
         ],
@@ -1367,13 +1367,13 @@
               "schema": {
                 "allOf": [
                   {
-                    "$ref": "./schemas/0.7/envelope.json"
+                    "$ref": "./schemas/0.8/envelope.json"
                   },
                   {
                     "type": "object",
                     "properties": {
                       "body": {
-                        "$ref": "./schemas/0.7/dispute.json"
+                        "$ref": "./schemas/0.8/dispute.json"
                       }
                     }
                   }
@@ -1421,7 +1421,7 @@
             "required": true,
             "description": "",
             "schema": {
-              "$ref": "./schemas/0.7/common.json#/$defs/uuid"
+              "$ref": "./schemas/0.8/common.json#/$defs/uuid"
             }
           }
         ],
@@ -1454,16 +1454,59 @@
         "tags": [
           "Portability"
         ],
-        "summary": "Latest Merkle root and inclusion proofs (ARC-Port)",
-        "description": "See spec §16.",
+        "summary": "Latest anchored Merkle root with its chain reference (ARC-Port)",
+        "description": "See spec §19.3. The root covers the canonical bytes of every envelope the registry accepted in the period.",
         "operationId": "get_v1_anchors_latest",
         "responses": {
           "200": {
-            "description": "Accepted. The registry returns a registry-signed ARC envelope.",
+            "description": "The latest anchored root.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SignedEnvelope"
+                  "$ref": "./schemas/0.8/anchor.json"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "ARC error (spec §15)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/anchors/proof/{hash}": {
+      "get": {
+        "tags": [
+          "Portability"
+        ],
+        "summary": "Inclusion proof for one envelope hash against an anchored root (ARC-Port)",
+        "description": "See spec §19.3. Verifiable by any party against the on-chain root.",
+        "operationId": "get_v1_anchors_proof",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "description": "Envelope hash (sha256:<hex>).",
+            "schema": {
+              "$ref": "./schemas/0.8/common.json#/$defs/hash"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The inclusion proof and the anchor it resolves to.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/0.8/anchor_proof.json"
                 }
               }
             }
@@ -1485,14 +1528,14 @@
   "components": {
     "schemas": {
       "SignedEnvelope": {
-        "$ref": "./schemas/0.7/envelope.json"
+        "$ref": "./schemas/0.8/envelope.json"
       },
       "Error": {
         "type": "object",
         "required": [
           "code"
         ],
-        "description": "Not yet normative in arc/0.7: the spec defines the codes but not the error body.",
+        "description": "Not yet normative in arc/0.8: the spec defines the codes but not the error body.",
         "properties": {
           "code": {
             "enum": [
@@ -1542,7 +1585,7 @@
             "type": "array",
             "minItems": 1,
             "items": {
-              "$ref": "./schemas/0.7/common.json#/$defs/version"
+              "$ref": "./schemas/0.8/common.json#/$defs/version"
             }
           },
           "conformance": {

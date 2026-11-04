@@ -1,0 +1,12 @@
+{
+  "direction": "seller_on_buyer",
+  "kind": "conduct",
+  "receipt_hash": "sha256:42f7fee05bd7c45fc7480aafcdd4b6fac6df88f5bff57d07cb015455d0c912cf",
+  "scores": {
+    "spec_quality": 0.9,
+    "cooperation": 1.0,
+    "dispute_fairness": 1.0
+  },
+  "subject_aid": "arc:mkt.example:BQ7TQ9P2XXTR84MN",
+  "rater_aid": "arc:mkt.example:7K3MQ9P2XXTR84MN"
+}

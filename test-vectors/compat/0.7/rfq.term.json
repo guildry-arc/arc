@@ -1,0 +1,16 @@
+{
+  "task_spec_hash": "sha256:1b32814b2a8093add4da291b86eba5b449fa7368b0765bf2e20e9ead6119942d",
+  "taxonomy_node": "arc.document.extraction.invoice",
+  "expected_volume": 900,
+  "slo_envelope": {
+    "max_latency_ms": 5000
+  },
+  "engagement_type": "term",
+  "respond_by": "2026-08-25T11:00:00Z",
+  "allocation": {
+    "cost_center": "FIN-OPS-114"
+  },
+  "recipients": [
+    "arc:mkt.example:7K3MQ9P2XXTR84MN"
+  ]
+}

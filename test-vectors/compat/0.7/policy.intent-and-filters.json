@@ -1,0 +1,33 @@
+{
+  "intent": {
+    "need": "extract line items from supplier invoice PDFs to JSON",
+    "example_input_hash": "sha256:d6c152a96c2098fac4f42e3ccb61560f9a61f262b2f9144220b5496eabe92e9a"
+  },
+  "taxonomy_node": "arc.document.extraction.invoice",
+  "filters": [
+    {
+      "dimension": "accuracy",
+      "min": 0.96,
+      "window_days": 30,
+      "min_samples": 200,
+      "rater_rep_min": 0.5
+    },
+    {
+      "dimension": "speed_p95_ms",
+      "max": 5000
+    }
+  ],
+  "rank_by": {
+    "accuracy": 0.6,
+    "price": 0.4
+  },
+  "max_price": {
+    "amount": "0.05",
+    "currency": "USD"
+  },
+  "require_probe_verified": true,
+  "exploration": {
+    "enabled": true,
+    "budget_pct": 5
+  }
+}

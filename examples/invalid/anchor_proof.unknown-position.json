@@ -1,0 +1,20 @@
+{
+  "hash": "sha256:2f63da3028d4683d1ed3647d485638dce809aa268bdcda51b0db9a5145943175",
+  "root": "sha256:75be2ea757399eceb885d02f85d29e435b6c82dbda854c8a51486dd3b779f121",
+  "path": [
+    {
+      "position": "up",
+      "hash": "sha256:9ff0568414f28907ce251f265ec0ca4c1648ce276f633e85bc6e64a7f40c1c7e"
+    },
+    {
+      "position": "left",
+      "hash": "sha256:b693721234483b94325e74a1d0843884e9a5464c6fecf30a684277bffb58a2b4"
+    }
+  ],
+  "anchor": {
+    "chain": "eip155:8453",
+    "contract": "0x4A1b2C3d4E5f60718293A4b5C6d7E8f9012a3B4c",
+    "tx": "0xd75a15bc938848bd117fc3e936847029deeef6bde127568c63e625142090e1c3",
+    "anchored": "2026-10-29T16:00:00Z"
+  }
+}
